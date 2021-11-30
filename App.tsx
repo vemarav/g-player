@@ -1,6 +1,13 @@
 import React from 'react';
-import {View, Text, StyleSheet, Linking, Alert} from 'react-native';
+import {View, StyleSheet, Linking, StatusBar, Dimensions} from 'react-native';
 import Video from 'react-native-video';
+import {
+  GestureHandlerRootView,
+  PanGestureHandler,
+  PinchGestureHandler,
+} from 'react-native-gesture-handler';
+
+const WINDOW = Dimensions.get('screen');
 
 const App = (): React.ReactChild => {
   const [uri, setUri] = React.useState('No Uri');
@@ -15,29 +22,35 @@ const App = (): React.ReactChild => {
   }, []);
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>{uri}</Text>
-      <Video
-        repeat
-        source={{uri}}
-        resizeMode={'contain'}
-        style={{width: '100%', height: 300, backgroundColor: '#000000'}}
-      />
-    </View>
+    <GestureHandlerRootView>
+      <StatusBar hidden />
+      <PanGestureHandler minPointers={1} maxPointers={1}>
+        <PinchGestureHandler minPointers={2}>
+          <View style={styles.overlay}>
+            <Video
+              repeat
+              source={require('./assets/video.mp4')}
+              resizeMode={'contain'}
+              style={styles.video}
+              fullscreen
+            />
+          </View>
+        </PinchGestureHandler>
+      </PanGestureHandler>
+    </GestureHandlerRootView>
   );
 };
 
 export default App;
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+  video: {
+    zIndex: 0,
+    width: WINDOW.width,
+    height: WINDOW.height,
+    backgroundColor: '#000000',
   },
-  title: {
-    fontSize: 20,
-    color: '#707070',
-    margin: 30,
+  overlay: {
+    zIndex: 1,
   },
 });
