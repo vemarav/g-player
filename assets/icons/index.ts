@@ -5,12 +5,9 @@ import VolumeUp from './VolumeUp';
 import VolumeMute from './VolumeMute';
 import Brightness from './Brightness';
 
-const Circle = require('./Circle.png');
-
 export default {
   Play,
   Pause,
-  Circle,
   VolumeUp,
   VolumeMute,
   Brightness,
