@@ -1,20 +1,17 @@
 import React, {useState, useEffect, useRef} from 'react';
-import {View, StyleSheet, Linking, StatusBar, Dimensions, ViewStyle} from 'react-native';
-import Video from 'react-native-video';
+import {View, StyleSheet, Linking, StatusBar, Dimensions, Text} from 'react-native';
+import Video, {OnLoadData} from 'react-native-video';
 import {GestureHandlerRootView, GestureDetector, Gesture} from 'react-native-gesture-handler';
 import Slider from '@react-native-community/slider';
-import Animated, {
-  useAnimatedStyle,
-  useDerivedValue,
-  useSharedValue,
-  useValue,
-} from 'react-native-reanimated';
+import Animated, {call, useCode, useValue} from 'react-native-reanimated';
+import {useSharedValue, useDerivedValue, useAnimatedStyle} from 'react-native-reanimated';
 import SystemSetting from 'react-native-system-setting';
+import Orientation from 'react-native-orientation-locker';
 
 import ReText from './retext';
 import Colors from './colors';
 import Icons from '../assets/icons';
-import {getTime, getValue} from './utils';
+import {getTime, getValue, usePrevious} from './utils';
 
 const AnimatedVideo = Animated.createAnimatedComponent(Video);
 const AnimatedSlider = Animated.createAnimatedComponent(Slider);
@@ -32,34 +29,42 @@ const Player = () => {
     volume: 0,
     brightness: 0,
   });
+  const info = useSharedValue<any>({
+    duration: 0,
+  });
 
   const scale = useSharedValue(1);
   const zoomText = useDerivedValue(() => `${Math.round(scale.value * 100)}%`);
-
   const volume = useSharedValue(0);
   const volumeText = useDerivedValue(() => `${Math.round(volume.value * 30)}`);
-
   const brightness = useSharedValue(0);
   const brightnessText = useDerivedValue(() => `${Math.round(brightness.value * 30)}`);
-
   const progress: Animated.Value<number> = useValue(0);
+  const watchTime = useSharedValue(0);
 
+  const [watchTimeText, setWatchTimeText] = useState(getTime(0));
+  const [uri, setUri] = React.useState('content://media/external/file/20897');
   const [isZoom, setZoom] = useState(false);
   const [swipe, setSwipe] = useState<Swipe>();
   const [isPaused, setPaused] = useState(false);
-  const [uri, setUri] = React.useState('No Uri');
   const [isVolume, setIsVolume] = useState(false);
-  const [info, setInfo] = useState({duration: 0});
   const [isControls, setControls] = useState(false);
   const [isBrightness, setIsBrightness] = useState(false);
-
   const [dimensions, setDimensions] = useState(Dimensions.get('screen'));
 
-  const videoStyles = useAnimatedStyle<Animated.AnimatedStyleProp<ViewStyle>>(() => {
+  const prevPaused = usePrevious(isPaused);
+  const videoStyles = useAnimatedStyle(() => {
     return {
       transform: [{scale: scale.value}],
     };
   });
+
+  useCode(() => {
+    return call([progress], (progress: any) => {
+      watchTime.value = progress * info.value.duration;
+      setWatchTimeText(getTime(watchTime.value));
+    });
+  }, [progress]);
 
   useEffect(() => {
     const linkingSub = Linking.addEventListener('url', ({url}) => setUri(url));
@@ -79,6 +84,13 @@ const Player = () => {
     };
   });
 
+  useEffect(() => {
+    if (info.value.naturalSize) {
+      const {width, height} = info.value.naturalSize;
+      width > height ? Orientation.lockToLandscape() : Orientation.lockToPortrait();
+    }
+  }, [info.value]);
+
   const tap = Gesture.Tap()
     .numberOfTaps(1)
     .onStart(() => setControls(!isControls));
@@ -92,7 +104,6 @@ const Player = () => {
     .activeOffsetY([0, 20])
     .maxPointers(1)
     .onBegin(({x, y}) => {
-      console.log('begin **************************************');
       setSwipe(undefined);
       setIsVolume(false);
       setIsBrightness(false);
@@ -103,13 +114,15 @@ const Player = () => {
     .onUpdate(({x, y}) => {
       switch (swipe) {
         case Swipe.HORIZONTAL: {
-          const dx = x - before.value.translate.x;
-          const change = dx / dimensions.width;
-          console.log({change});
+          const dx = x - before.value.translate.x - 30;
+          const change = watchTime.value + (dx / dimensions.width) * (Math.abs(dx) / 2);
+          const seek = change < 0 ? 0 : change > info.value.duration ? info.value.duration : change;
+          progress.setValue(seek / info.value.duration);
+          videoRef.current?.seek(seek);
         }
         case Swipe.VERTICAL: {
-          const dy = before.value.translate.y - y;
-          const change = (dy / dimensions.height) * 4;
+          const dy = before.value.translate.y - y - 30;
+          const change = dy / dimensions.height;
           if (isVolume) {
             const _volume = before.value.volume + change;
             volume.value = _volume > 1 ? 1 : _volume < 0 ? 0 : _volume;
@@ -124,7 +137,10 @@ const Player = () => {
         default: {
           const dx = Math.abs(before.value.translate.x - x);
           const dy = Math.abs(before.value.translate.y - y);
-          if (dx > 30 && dy < 30) setSwipe(Swipe.HORIZONTAL);
+          if (dx > 30 && dy < 30) {
+            setSwipe(Swipe.HORIZONTAL);
+            setPaused(true);
+          }
           if (dy > 30 && dx < 30) {
             setSwipe(Swipe.VERTICAL);
             x > dimensions.width / 2 ? setIsVolume(true) : setIsBrightness(true);
@@ -133,10 +149,10 @@ const Player = () => {
       }
     })
     .onEnd(() => {
+      if (swipe === Swipe.HORIZONTAL) setPaused(false);
       setSwipe(undefined);
       setIsVolume(false);
       setIsBrightness(false);
-      console.log('end ==================================');
     });
 
   const pinch = Gesture.Pinch()
@@ -151,22 +167,28 @@ const Player = () => {
     .onEnd(() => setZoom(false));
 
   const updateSliderProgress = ({currentTime}: {currentTime: number}) => {
-    progress.setValue(currentTime / info.duration);
+    progress.setValue(currentTime / info.value.duration);
   };
 
   const onSliding = (value: number) => {
     progress.setValue(value);
-    videoRef.current?.seek(value * info.duration, 0);
+    videoRef.current?.seek(value * info.value.duration);
   };
 
   const onSlidingStart = () => setPaused(true);
-  const onSlidingEnd = () => setPaused(false);
+  const onSlidingEnd = () => setPaused(prevPaused);
 
   const gestures = Gesture.Race(doubleTap, pan, pinch, tap);
   const size = {width: dimensions.width, height: dimensions.height};
 
   const Status = () => {
     switch (true) {
+      case swipe === Swipe.HORIZONTAL:
+        return (
+          <View style={styles.iconContainer}>
+            <Text style={[styles.text, styles.displayText]}>{watchTimeText}</Text>
+          </View>
+        );
       case isZoom:
         return (
           <View style={styles.iconContainer}>
@@ -209,10 +231,10 @@ const Player = () => {
               fullscreen
               ref={videoRef}
               paused={isPaused}
-              onLoad={setInfo}
+              onLoad={data => (info.value = data)}
               resizeMode={'contain'}
               onProgress={updateSliderProgress}
-              source={require('../assets/video.mp4')}
+              source={{uri}}
               style={[styles.video, size, videoStyles]}
             />
             <View style={[styles.iconHolder, size]}>
@@ -220,8 +242,9 @@ const Player = () => {
             </View>
           </View>
         </GestureDetector>
-        <View style={styles.sliderContainer}>
-          {isControls ? (
+        {isControls ? (
+          <View style={styles.sliderContainer}>
+            <Text style={styles.timeText}>{watchTimeText}</Text>
             <AnimatedSlider
               value={progress}
               style={styles.slider}
@@ -232,8 +255,9 @@ const Player = () => {
               onSlidingComplete={onSlidingEnd}
               onValueChange={onSliding}
             />
-          ) : null}
-        </View>
+            <Text style={styles.timeText}>{getTime(info.value.duration)}</Text>
+          </View>
+        ) : null}
       </GestureHandlerRootView>
     </>
   );
@@ -256,12 +280,15 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 0,
     width: '100%',
-    paddingTop: 10,
-    paddingBottom: 60,
-    // backgroundColor: 'red',
+    backgroundColor: Colors.blackAlpha(50),
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingBottom: 20,
   },
   slider: {
-    height: 30,
+    height: 40,
+    flex: 1,
   },
   iconHolder: {
     position: 'absolute',
@@ -271,7 +298,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   iconContainer: {
-    width: 150,
+    width: 200,
     height: 100,
     borderRadius: 10,
     backgroundColor: Colors.blackAlpha(60),
@@ -288,5 +315,17 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: Colors.white,
     marginLeft: 5,
+  },
+  displayText: {
+    width: 180,
+    textAlign: 'center',
+    marginLeft: 0,
+  },
+  timeText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: Colors.white,
+    width: 60,
+    textAlign: 'center',
   },
 });
