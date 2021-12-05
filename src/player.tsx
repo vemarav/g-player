@@ -1,6 +1,6 @@
 import React, {useState, useEffect, useRef} from 'react';
 import {View, StyleSheet, Linking, StatusBar, Dimensions, Text} from 'react-native';
-import Video, {OnLoadData} from 'react-native-video';
+import Video from 'react-native-video';
 import {GestureHandlerRootView, GestureDetector, Gesture} from 'react-native-gesture-handler';
 import Slider from '@react-native-community/slider';
 import Animated, {call, useCode, useValue} from 'react-native-reanimated';
