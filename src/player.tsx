@@ -21,7 +21,10 @@ enum Swipe {
   VERTICAL = 4,
 }
 
-const Player = () => {
+const Player = (props: any) => {
+  const {uri} = props.route.params;
+  const contentUri = `content://${props.route.path}`;
+
   const videoRef: React.Ref<Video> = useRef(null);
   const before = useSharedValue({
     scale: 1,
@@ -43,7 +46,6 @@ const Player = () => {
   const watchTime = useSharedValue(0);
 
   const [watchTimeText, setWatchTimeText] = useState(getTime(0));
-  const [uri, setUri] = React.useState('content://media/external/file/20897');
   const [isZoom, setZoom] = useState(false);
   const [swipe, setSwipe] = useState<Swipe>();
   const [isPaused, setPaused] = useState(false);
@@ -52,7 +54,6 @@ const Player = () => {
   const [isBrightness, setIsBrightness] = useState(false);
   const [dimensions, setDimensions] = useState(Dimensions.get('screen'));
 
-  const prevPaused = usePrevious(isPaused);
   const videoStyles = useAnimatedStyle(() => {
     return {
       transform: [{scale: scale.value}],
@@ -67,8 +68,6 @@ const Player = () => {
   }, [progress]);
 
   useEffect(() => {
-    const linkingSub = Linking.addEventListener('url', ({url}) => setUri(url));
-
     const dimensionSub = Dimensions.addEventListener('change', ({screen}) => {
       setDimensions(screen);
     });
@@ -80,9 +79,12 @@ const Player = () => {
 
     return () => {
       dimensionSub?.remove();
-      linkingSub?.remove();
+      Orientation.lockToPortrait();
+      Orientation.getAutoRotateState(state => {
+        if (state) Orientation.unlockAllOrientations();
+      });
     };
-  });
+  }, []);
 
   useEffect(() => {
     if (info.value.naturalSize) {
@@ -176,7 +178,7 @@ const Player = () => {
   };
 
   const onSlidingStart = () => setPaused(true);
-  const onSlidingEnd = () => setPaused(prevPaused);
+  const onSlidingEnd = () => setTimeout(() => setPaused(false), 50);
 
   const gestures = Gesture.Race(doubleTap, pan, pinch, tap);
   const size = {width: dimensions.width, height: dimensions.height};
@@ -234,7 +236,7 @@ const Player = () => {
               onLoad={data => (info.value = data)}
               resizeMode={'contain'}
               onProgress={updateSliderProgress}
-              source={{uri}}
+              source={{uri: uri ?? contentUri}}
               style={[styles.video, size, videoStyles]}
             />
             <View style={[styles.iconHolder, size]}>
