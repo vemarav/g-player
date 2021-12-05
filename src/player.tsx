@@ -118,9 +118,8 @@ const Player = (props: any) => {
       switch (swipe) {
         case Swipe.HORIZONTAL: {
           const dx = x - before.value.translate.x - 30;
-          const change = Number(
-            (watchTime.value + (dx / dimensions.width) * (Math.abs(dx) / 2)).toPrecision(2),
-          );
+          const change = watchTime.value + (dx / dimensions.width) * (Math.abs(dx) / 3);
+
           const seek = change < 0 ? 0 : change > info.value.duration ? info.value.duration : change;
           progress.setValue(seek / info.value.duration);
           videoRef.current?.seek(seek);
