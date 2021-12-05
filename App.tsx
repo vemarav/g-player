@@ -1,8 +1,8 @@
 import React from 'react';
-import Player from './src';
+import Navigation from './src/navigation';
 
 const App = () => {
-  return <Player />;
+  return <Navigation />;
 };
 
 export default App;

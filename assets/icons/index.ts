@@ -2,17 +2,16 @@ import Play from './Play';
 import Pause from './Pause';
 import Information from './Info';
 import VolumeUp from './VolumeUp';
-import VolumeMute from './VolumeMute';
+import Back from './Back';
 import Brightness from './Brightness';
-
-const Circle = require('./Circle.png');
+import Folder from './Folder';
 
 export default {
+  Back,
   Play,
   Pause,
-  Circle,
+  Folder,
   VolumeUp,
-  VolumeMute,
   Brightness,
   Information,
 };
