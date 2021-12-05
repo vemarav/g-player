@@ -1,17 +1,17 @@
 import React, {useEffect, useState} from 'react';
-import {StatusBar, View, Platform, StyleSheet, Dimensions} from 'react-native';
-import {Text, ScrollView, Alert, TouchableOpacity} from 'react-native';
+import {StatusBar, View, StyleSheet, Dimensions, ActivityIndicator} from 'react-native';
+import {Text, ScrollView, TouchableOpacity} from 'react-native';
 import CameraRoll, {Album, GetAlbumsParams} from '@react-native-community/cameraroll';
 
 import {hasPermissionAndroid} from './utils';
 import Colors from './colors';
 import Icons from '../assets/icons';
 import Routes from './routes';
-import Orientation from 'react-native-orientation-locker';
 
 const {width} = Dimensions.get('screen');
 
 const Videos = (props: any) => {
+  const [isLoading, setLoading] = useState<boolean>(true);
   const [albums, setAlbums] = useState<Array<Album>>([]);
 
   useEffect(() => {
@@ -21,6 +21,7 @@ const Videos = (props: any) => {
           const folderOptions: GetAlbumsParams = {assetType: 'Videos'};
           CameraRoll.getAlbums(folderOptions).then((folders: Array<Album>) => {
             setAlbums(folders);
+            setLoading(false);
           });
         }
       });
@@ -39,21 +40,31 @@ const Videos = (props: any) => {
       <View style={styles.border}>
         <Text style={styles.header}>Folders</Text>
       </View>
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollViewContainer}>
-        {albums.map((album: Album) => (
-          <TouchableOpacity onPress={() => navigateTo(Routes.Videos, album)} key={album.title}>
-            <View style={styles.folder}>
-              <Icons.Folder {...styles.icon} />
-              <View style={styles.textContainer}>
-                <Text style={styles.title}>{album.title}</Text>
-                <Text style={styles.count}>
-                  {album.count} {getVideoText(album.count)}
-                </Text>
+      {isLoading && (
+        <View style={styles.loader}>
+          <ActivityIndicator size={'large'} color={Colors.witeAlpha(60)} />
+        </View>
+      )}
+      {!isLoading && (
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollViewContainer}
+          showsVerticalScrollIndicator={false}>
+          {albums.map((album: Album) => (
+            <TouchableOpacity onPress={() => navigateTo(Routes.Videos, album)} key={album.title}>
+              <View style={styles.folder}>
+                <Icons.Folder {...styles.icon} />
+                <View style={styles.textContainer}>
+                  <Text style={styles.title}>{album.title}</Text>
+                  <Text style={styles.count}>
+                    {album.count} {getVideoText(album.count)}
+                  </Text>
+                </View>
               </View>
-            </View>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      )}
     </View>
   );
 };
@@ -61,6 +72,11 @@ const Videos = (props: any) => {
 export default Videos;
 
 const styles = StyleSheet.create({
+  loader: {
+    flex: 1,
+    justifyContent: 'center',
+    backgroundColor: Colors.black,
+  },
   container: {
     flex: 1,
     backgroundColor: Colors.black,

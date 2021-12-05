@@ -1,8 +1,7 @@
 import React, {useEffect, useRef, useState} from 'react';
-import {StatusBar, View, Platform, StyleSheet, Dimensions} from 'react-native';
+import {StatusBar, View, ActivityIndicator, StyleSheet, Dimensions, Image} from 'react-native';
 import {Text, ScrollView, TouchableOpacity} from 'react-native';
 import CameraRoll, {GetPhotosParams, PhotoIdentifier} from '@react-native-community/cameraroll';
-import Video, {OnLoadData} from 'react-native-video';
 
 import {hasPermissionAndroid} from './utils';
 import Colors from './colors';
@@ -12,11 +11,13 @@ import Routes from './routes';
 const {width} = Dimensions.get('screen');
 
 const Videos = (props: any) => {
+  const mounted = useRef(false);
   const {title, count} = props.route.params;
+  const [isLoading, setLoading] = useState<boolean>(true);
   const [videos, setVideos] = useState<Array<PhotoIdentifier>>([]);
-  const videoRefs = useRef<Array<any>>([]);
 
   useEffect(() => {
+    mounted.current = true;
     setTimeout(() => {
       hasPermissionAndroid().then(granted => {
         if (granted) {
@@ -25,18 +26,21 @@ const Videos = (props: any) => {
             assetType: 'Videos',
             groupName: title,
           };
-          CameraRoll.getPhotos(folderOptions).then(list => setVideos(list.edges));
+          CameraRoll.getPhotos(folderOptions).then(list => {
+            setVideos(list.edges);
+            setLoading(false);
+          });
         }
       });
-    }, 300);
+    }, 0);
+
+    return () => {
+      mounted.current = false;
+    };
   }, []);
 
   const navigateTo = (route: string, params: any = {}) => {
     props.navigation.navigate(route, params);
-  };
-
-  const seekTo = (data: OnLoadData, index: number) => {
-    videoRefs.current[index]?.seek(data.duration / 2);
   };
 
   return (
@@ -47,33 +51,37 @@ const Videos = (props: any) => {
         <TouchableOpacity onPress={() => navigateTo(Routes.Folders)}>
           <Icons.Back {...styles.back} />
         </TouchableOpacity>
-        <Text style={styles.header}>Videos</Text>
+        <Text style={styles.header} numberOfLines={1}>
+          {title}
+        </Text>
       </View>
 
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollViewContainer}>
-        {videos.map((video: PhotoIdentifier, index: number) => {
-          const {uri} = video.node.image;
-          return (
-            <TouchableOpacity onPress={() => navigateTo(Routes.Player, {uri})} key={uri}>
-              <View style={styles.folder}>
-                {uri ? (
-                  <Video
-                    ref={ref => (videoRefs.current[index] = ref)}
-                    paused
-                    style={styles.video}
-                    source={{uri}}
-                    onLoad={data => seekTo(data, index)}
-                    resizeMode={'contain'}
-                  />
-                ) : null}
-                <View style={styles.textContainer}>
-                  <Text style={styles.title}>{uri.split(`${title}/`)[1]}</Text>
+      {isLoading && (
+        <View style={styles.loader}>
+          <ActivityIndicator size={'large'} color={Colors.witeAlpha(60)} />
+        </View>
+      )}
+
+      {!isLoading && (
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollViewContainer}
+          showsVerticalScrollIndicator={false}>
+          {videos.map((video: PhotoIdentifier, index: number) => {
+            const {uri} = video.node.image;
+            return (
+              <TouchableOpacity onPress={() => navigateTo(Routes.Player, {uri})} key={uri}>
+                <View style={styles.folder}>
+                  <Image source={{uri}} style={styles.video} />
+                  <View style={styles.textContainer}>
+                    <Text style={styles.title}>{uri.split(`${title}/`)[1]}</Text>
+                  </View>
                 </View>
-              </View>
-            </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+      )}
     </View>
   );
 };
@@ -81,6 +89,11 @@ const Videos = (props: any) => {
 export default Videos;
 
 const styles = StyleSheet.create({
+  loader: {
+    flex: 1,
+    justifyContent: 'center',
+    backgroundColor: Colors.black,
+  },
   container: {
     flex: 1,
     backgroundColor: Colors.black,
@@ -94,8 +107,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   back: {
-    width: 24,
-    height: 24,
+    width: 20,
+    height: 20,
   },
   header: {
     fontSize: 20,
