@@ -5534,11 +5534,6 @@ react-native-gesture-handler@^2.0.0:
     lodash "^4.17.21"
     prop-types "^15.7.2"
 
-react-native-media-meta@^0.0.11:
-  version "0.0.11"
-  resolved "https://registry.yarnpkg.com/react-native-media-meta/-/react-native-media-meta-0.0.11.tgz#d17fdbe43312d9a69fee862e91a1957d7b11726b"
-  integrity sha512-8pZA7wCoscLFJZRwd8GAYwsiuwc2XTYDcZm3cp9SN2wnKTnE2n1AW4AvBu0LGc1hyHYGLKPN4MJ6st0rY7H1vA==
-
 react-native-orientation-locker@^1.4.0:
   version "1.4.0"
   resolved "https://registry.yarnpkg.com/react-native-orientation-locker/-/react-native-orientation-locker-1.4.0.tgz#ac27a0cd13d5eaaf06b0a2eed2f98f52fbac2f66"
