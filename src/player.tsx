@@ -11,7 +11,7 @@ import Orientation from 'react-native-orientation-locker';
 import ReText from './retext';
 import Colors from './colors';
 import Icons from '../assets/icons';
-import {getTime, getValue, usePrevious} from './utils';
+import {getTime, getValue} from './utils';
 
 const AnimatedVideo = Animated.createAnimatedComponent(Video);
 const AnimatedSlider = Animated.createAnimatedComponent(Slider);
@@ -50,7 +50,7 @@ const Player = (props: any) => {
   const [swipe, setSwipe] = useState<Swipe>();
   const [isPaused, setPaused] = useState(false);
   const [isVolume, setIsVolume] = useState(false);
-  const [isControls, setControls] = useState(false);
+  const [isControls, setControls] = useState(true);
   const [isBrightness, setIsBrightness] = useState(false);
   const [dimensions, setDimensions] = useState(Dimensions.get('screen'));
 
@@ -90,6 +90,7 @@ const Player = (props: any) => {
     if (info.value.naturalSize) {
       const {width, height} = info.value.naturalSize;
       width > height ? Orientation.lockToLandscape() : Orientation.lockToPortrait();
+      setControls(false);
     }
   }, [info.value]);
 
@@ -117,14 +118,16 @@ const Player = (props: any) => {
       switch (swipe) {
         case Swipe.HORIZONTAL: {
           const dx = x - before.value.translate.x - 30;
-          const change = watchTime.value + (dx / dimensions.width) * (Math.abs(dx) / 2);
+          const change = Number(
+            (watchTime.value + (dx / dimensions.width) * (Math.abs(dx) / 2)).toPrecision(2),
+          );
           const seek = change < 0 ? 0 : change > info.value.duration ? info.value.duration : change;
           progress.setValue(seek / info.value.duration);
           videoRef.current?.seek(seek);
         }
         case Swipe.VERTICAL: {
           const dy = before.value.translate.y - y - 30;
-          const change = dy / dimensions.height;
+          const change = Number((dy / dimensions.height).toPrecision(2));
           if (isVolume) {
             const _volume = before.value.volume + change;
             volume.value = _volume > 1 ? 1 : _volume < 0 ? 0 : _volume;
@@ -201,14 +204,14 @@ const Player = (props: any) => {
         return (
           <View style={styles.iconContainer}>
             <Icons.VolumeUp {...styles.icon} />
-            <ReText text={volumeText} style={styles.text} />
+            <ReText text={volumeText} style={[styles.text, styles.textWidth]} />
           </View>
         );
       case isBrightness:
         return (
           <View style={styles.iconContainer}>
             <Icons.Brightness {...styles.icon} />
-            <ReText text={brightnessText} style={styles.text} />
+            <ReText text={brightnessText} style={[styles.text, styles.textWidth]} />
           </View>
         );
       case isPaused && isControls:
@@ -230,7 +233,7 @@ const Player = (props: any) => {
           <View style={[styles.overlay]}>
             <AnimatedVideo
               repeat
-              fullscreen
+              fullscreen={!isControls}
               ref={videoRef}
               paused={isPaused}
               onLoad={data => (info.value = data)}
@@ -329,5 +332,8 @@ const styles = StyleSheet.create({
     color: Colors.white,
     width: 60,
     textAlign: 'center',
+  },
+  textWidth: {
+    width: 55,
   },
 });

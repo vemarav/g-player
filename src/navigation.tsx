@@ -14,11 +14,7 @@ const Navigation = () => {
   return (
     <NavigationContainer linking={linking}>
       <Stack.Navigator>
-        <Stack.Screen
-          name={Routes.Folders}
-          options={{headerShown: false, animation: 'slide_from_right'}}
-          component={Folder}
-        />
+        <Stack.Screen name={Routes.Folders} options={{headerShown: false}} component={Folder} />
         <Stack.Screen
           name={Routes.Videos}
           options={{headerShown: false, animation: 'slide_from_right'}}

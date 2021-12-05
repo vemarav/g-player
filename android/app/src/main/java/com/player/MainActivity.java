@@ -1,4 +1,4 @@
-package com.player;
+package com.gargantua.player;
 
 import com.facebook.react.ReactActivity;
 import android.content.Intent;
