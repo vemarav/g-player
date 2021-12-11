@@ -1,5 +1,5 @@
-import React, {useEffect, useRef, useState} from 'react';
-import {StatusBar, View, ActivityIndicator, StyleSheet, Dimensions} from 'react-native';
+import React, {useEffect, useState} from 'react';
+import {StatusBar, View, StyleSheet, Dimensions} from 'react-native';
 import {RefreshControl, AppState} from 'react-native';
 import {Text, ScrollView, TouchableOpacity} from 'react-native';
 import CameraRoll, {GetPhotosParams, PhotoIdentifier} from '@react-native-community/cameraroll';
@@ -13,37 +13,33 @@ import Routes from './routes';
 const {width} = Dimensions.get('screen');
 
 const Videos = (props: any) => {
-  const mounted = useRef(false);
   const {title, count} = props.route.params;
-  const [isLoading, setLoading] = useState<boolean>(true);
+  const folderOptions: GetPhotosParams = {
+    first: count,
+    assetType: 'Videos',
+    groupName: title,
+  };
+  const [isLoading, setLoading] = useState<boolean>(false);
   const [videos, setVideos] = useState<Array<PhotoIdentifier>>([]);
 
   useEffect(() => {
-    mounted.current = true;
-    setTimeout(loadFiles, 0);
+    loadFiles();
     const appStateListener = AppState.addEventListener('focus', loadFiles);
 
     return () => {
-      mounted.current = false;
       appStateListener.remove();
     };
   }, []);
 
-  const loadFiles = () => {
+  const loadFiles = async () => {
     setLoading(true);
-    hasPermissionAndroid().then(granted => {
-      if (granted) {
-        const folderOptions: GetPhotosParams = {
-          first: count,
-          assetType: 'Videos',
-          groupName: title,
-        };
-        CameraRoll.getPhotos(folderOptions).then(list => {
-          setVideos(list.edges);
-          setLoading(false);
-        });
-      }
-    });
+    try {
+      const granted = await hasPermissionAndroid();
+      if (granted) setVideos((await CameraRoll.getPhotos(folderOptions)).edges);
+    } catch (err) {
+      console.log(err);
+    }
+    setLoading(false);
   };
 
   const navigateTo = (route: string, params: any = {}) => {
@@ -63,33 +59,25 @@ const Videos = (props: any) => {
         </Text>
       </View>
 
-      {isLoading && (
-        <View style={styles.loader}>
-          <ActivityIndicator size={'large'} color={Colors.witeAlpha(60)} />
-        </View>
-      )}
-
-      {!isLoading && (
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollViewContainer}
-          showsVerticalScrollIndicator={false}
-          refreshControl={<RefreshControl refreshing={isLoading} onRefresh={loadFiles} />}>
-          {videos.map((video: PhotoIdentifier) => {
-            const {uri} = video.node.image;
-            return (
-              <TouchableOpacity onPress={() => navigateTo(Routes.Player, {uri})} key={uri}>
-                <View style={styles.folder}>
-                  <Image source={{uri}} style={styles.video} />
-                  <View style={styles.textContainer}>
-                    <Text style={styles.title}>{uri.split(`${title}/`)[1]}</Text>
-                  </View>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollViewContainer}
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={isLoading} onRefresh={loadFiles} />}>
+        {videos.map((video: PhotoIdentifier) => {
+          const {uri} = video.node.image;
+          return (
+            <TouchableOpacity onPress={() => navigateTo(Routes.Player, {uri})} key={uri}>
+              <View style={styles.folder}>
+                <Image source={{uri}} style={styles.video} />
+                <View style={styles.textContainer}>
+                  <Text style={styles.title}>{uri.split(`${title}/`)[1]}</Text>
                 </View>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
-      )}
+              </View>
+            </TouchableOpacity>
+          );
+        })}
+      </ScrollView>
     </View>
   );
 };

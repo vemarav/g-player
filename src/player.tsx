@@ -11,7 +11,7 @@ import Orientation from 'react-native-orientation-locker';
 import ReText from './retext';
 import Colors from './colors';
 import Icons from '../assets/icons';
-import {getTime, getValue} from './utils';
+import {getTime, getValue, hasPermissionAndroid} from './utils';
 
 const AnimatedVideo = Animated.createAnimatedComponent(Video);
 const AnimatedSlider = Animated.createAnimatedComponent(Slider);
@@ -76,6 +76,7 @@ const Player = (props: any) => {
   }, [progress]);
 
   useEffect(() => {
+    hasPermissionAndroid();
     const dimensionSub = Dimensions.addEventListener('change', ({screen}) => {
       setDimensions(screen);
     });

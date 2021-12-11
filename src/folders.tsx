@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import {StatusBar, View, StyleSheet, Dimensions, ActivityIndicator} from 'react-native';
+import {StatusBar, View, StyleSheet, Dimensions} from 'react-native';
 import {Text, ScrollView, TouchableOpacity, RefreshControl, AppState} from 'react-native';
 import CameraRoll, {Album, GetAlbumsParams} from '@react-native-community/cameraroll';
 
@@ -10,29 +10,29 @@ import Routes from './routes';
 
 const {width} = Dimensions.get('screen');
 
-const Videos = (props: any) => {
+const Folders = (props: any) => {
+  const folderOptions: GetAlbumsParams = {assetType: 'Videos'};
+
   const [isLoading, setLoading] = useState<boolean>(true);
   const [albums, setAlbums] = useState<Array<Album>>([]);
 
   useEffect(() => {
-    setTimeout(loadAlbums, 300);
+    loadAlbums();
     const appStateListener = AppState.addEventListener('focus', loadAlbums);
     () => {
       appStateListener.remove();
     };
   }, []);
 
-  const loadAlbums = () => {
+  const loadAlbums = async () => {
     setLoading(true);
-    hasPermissionAndroid().then(granted => {
-      if (granted) {
-        const folderOptions: GetAlbumsParams = {assetType: 'Videos'};
-        CameraRoll.getAlbums(folderOptions).then((folders: Array<Album>) => {
-          setAlbums(folders);
-          setLoading(false);
-        });
-      }
-    });
+    try {
+      const granted = await hasPermissionAndroid();
+      if (granted) setAlbums(await CameraRoll.getAlbums(folderOptions));
+    } catch (err) {
+      console.error(err);
+    }
+    setLoading(false);
   };
 
   const navigateTo = (route: string, params: any = {}) => {
@@ -47,37 +47,31 @@ const Videos = (props: any) => {
       <View style={styles.border}>
         <Text style={styles.header}>Folders</Text>
       </View>
-      {isLoading && (
-        <View style={styles.loader}>
-          <ActivityIndicator size={'large'} color={Colors.witeAlpha(60)} />
-        </View>
-      )}
-      {!isLoading && (
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollViewContainer}
-          showsVerticalScrollIndicator={false}
-          refreshControl={<RefreshControl refreshing={isLoading} onRefresh={loadAlbums} />}>
-          {albums.map((album: Album) => (
-            <TouchableOpacity onPress={() => navigateTo(Routes.Videos, album)} key={album.title}>
-              <View style={styles.folder}>
-                <Icons.Folder {...styles.icon} />
-                <View style={styles.textContainer}>
-                  <Text style={styles.title}>{album.title}</Text>
-                  <Text style={styles.count}>
-                    {album.count} {getVideoText(album.count)}
-                  </Text>
-                </View>
+
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollViewContainer}
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={isLoading} onRefresh={loadAlbums} />}>
+        {albums.map((album: Album) => (
+          <TouchableOpacity onPress={() => navigateTo(Routes.Videos, album)} key={album.title}>
+            <View style={styles.folder}>
+              <Icons.Folder {...styles.icon} />
+              <View style={styles.textContainer}>
+                <Text style={styles.title}>{album.title}</Text>
+                <Text style={styles.count}>
+                  {album.count} {getVideoText(album.count)}
+                </Text>
               </View>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      )}
+            </View>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
     </View>
   );
 };
 
-export default Videos;
+export default Folders;
 
 const styles = StyleSheet.create({
   loader: {

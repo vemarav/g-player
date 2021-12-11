@@ -1,5 +1,5 @@
 import {useRef, useEffect} from 'react';
-import {PermissionsAndroid} from 'react-native';
+import {Alert, BackHandler, Linking, PermissionsAndroid} from 'react-native';
 
 export const getValue = (animated: any) => {
   return animated.value ?? animated._value;
@@ -26,12 +26,23 @@ export const usePrevious = (value: any): boolean => {
 
 export const hasPermissionAndroid = async () => {
   const permission = PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE;
-
   const hasPermission = await PermissionsAndroid.check(permission);
   if (hasPermission) {
-    return true;
+    const status = await PermissionsAndroid.request(permission);
+    return status === 'granted' ? true : showDialog();
   }
+  return showDialog();
+};
 
-  const status = await PermissionsAndroid.request(permission);
-  return status === 'granted';
+const showDialog = () => {
+  Alert.alert(
+    'Allow files access',
+    'In order to play video, app needs access to media files on your device. Go to settings to enable the permission.',
+    [
+      {text: 'EXIT APP', onPress: BackHandler.exitApp},
+      {text: 'OPEN APP SETTING', onPress: Linking.openSettings},
+    ],
+    {cancelable: false},
+  );
+  return false;
 };
