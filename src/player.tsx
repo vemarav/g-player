@@ -58,7 +58,7 @@ const Player = (props: any) => {
   const [isControls, setControls] = useState(true);
   const [isBrightness, setIsBrightness] = useState(false);
   const [dimensions, setDimensions] = useState(Dimensions.get('screen'));
-  const [videoOrientation, setVideoOrientation] = useState(VideoOrientation.PORTRAIT);
+  const [videoOrientation, setVideoOrientation] = useState(VideoOrientation.LANDSCAPE);
 
   const videoStyles = useAnimatedStyle(() => {
     return {
@@ -107,6 +107,10 @@ const Player = (props: any) => {
     setControls(false);
   }, [videoOrientation]);
 
+  const seekTo = (seconds: number, precision?: number) => {
+    videoRef.current?.seek(seconds, precision ?? 50);
+  };
+
   const tap = Gesture.Tap()
     .numberOfTaps(1)
     .onStart(() => setControls(!isControls));
@@ -134,7 +138,7 @@ const Player = (props: any) => {
           const change = watchTime.value + dx / 5;
           const seek = change < 0 ? 0 : change > info.value.duration ? info.value.duration : change;
           setWatchTimeText(getTime(seek));
-          videoRef.current?.seek(seek);
+          seekTo(seek);
         }
         case Swipe.VERTICAL: {
           const dy = before.value.translate.y - y - 30;
@@ -185,12 +189,13 @@ const Player = (props: any) => {
     .onEnd(() => setZoom(false));
 
   const updateSliderProgress = ({currentTime}: {currentTime: number}) => {
-    progress.setValue(currentTime / info.value.duration);
+    const played = currentTime / info.value.duration;
+    if (!isNaN(played)) progress.setValue(played);
   };
 
   const onSliding = (value: number) => {
     progress.setValue(value);
-    videoRef.current?.seek(value * info.value.duration);
+    seekTo(value * info.value.duration);
   };
 
   const onSlidingStart = () => setPaused(true);
@@ -261,6 +266,7 @@ const Player = (props: any) => {
               onProgress={updateSliderProgress}
               source={{uri: uri ?? contentUri}}
               style={[styles.video, size, videoStyles]}
+              useTextureView={false}
             />
             <View style={[styles.iconHolder, size]}>
               <Status />

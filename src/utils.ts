@@ -34,11 +34,9 @@ export const usePrevious = (value: any): boolean => {
 export const hasPermissionAndroid = async () => {
   const permission = PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE;
   const hasPermission = await PermissionsAndroid.check(permission);
-  if (hasPermission) {
-    const status = await PermissionsAndroid.request(permission);
-    return status === 'granted' ? true : showDialog();
-  }
-  return showDialog();
+  if (hasPermission) return true;
+  const status = await PermissionsAndroid.request(permission);
+  return status === 'granted' ? true : showDialog();
 };
 
 const showDialog = () => {
