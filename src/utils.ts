@@ -5,7 +5,7 @@ export const getValue = (animated: any) => {
   return animated.value ?? animated._value;
 };
 
-export const getTime = (seconds: number) => {
+export const getTime = (seconds: number): string => {
   const _seconds = `${Math.floor(seconds) % 60}`.padStart(2, '0');
   const _minutes = `${Math.floor(seconds / 60) % 60}`.padStart(2, '0');
   const _hours = `${Math.floor(seconds / 3600) % 24}`.padStart(2, '0');
@@ -14,6 +14,13 @@ export const getTime = (seconds: number) => {
   } else {
     return `${_minutes}:${_seconds}`;
   }
+};
+
+export const getTimeInSeconds = (time: string): number => {
+  const sum = (a: number, b: number) => a + b;
+  const timeConverter = (t: string, index: number) => +t * 60 ** index;
+  const timeInSec = time.split(':').reverse().map(timeConverter).reverse().reduce(sum, 0);
+  return +timeInSec;
 };
 
 export const usePrevious = (value: any): boolean => {

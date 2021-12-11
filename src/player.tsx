@@ -11,7 +11,7 @@ import Orientation from 'react-native-orientation-locker';
 import ReText from './retext';
 import Colors from './colors';
 import Icons from '../assets/icons';
-import {getTime, getValue, hasPermissionAndroid} from './utils';
+import {getTime, getTimeInSeconds, getValue, hasPermissionAndroid} from './utils';
 
 const AnimatedVideo = Animated.createAnimatedComponent(Video);
 const AnimatedSlider = Animated.createAnimatedComponent(Slider);
@@ -65,8 +65,6 @@ const Player = (props: any) => {
       transform: [{scale: scale.value}],
     };
   });
-
-  useEffect(() => {}, [contentUri]);
 
   useCode(() => {
     return call([progress], (progress: any) => {
@@ -133,10 +131,9 @@ const Player = (props: any) => {
       switch (swipe) {
         case Swipe.HORIZONTAL: {
           const dx = x - before.value.translate.x;
-          console.log({dx});
-          const change = watchTime.value + dx;
+          const change = watchTime.value + dx / 5;
           const seek = change < 0 ? 0 : change > info.value.duration ? info.value.duration : change;
-          progress.setValue(seek / info.value.duration);
+          setWatchTimeText(getTime(seek));
           videoRef.current?.seek(seek);
         }
         case Swipe.VERTICAL: {
@@ -168,6 +165,8 @@ const Player = (props: any) => {
       }
     })
     .onEnd(() => {
+      const currentTime = getTimeInSeconds(watchTimeText);
+      if (info.value.duration) progress.setValue(currentTime / info.value.duration);
       if (swipe === Swipe.HORIZONTAL) setPaused(false);
       setSwipe(undefined);
       setIsVolume(false);
@@ -206,7 +205,12 @@ const Player = (props: any) => {
     switch (true) {
       case swipe === Swipe.HORIZONTAL:
         return (
-          <View style={styles.iconContainer}>
+          <View
+            style={[
+              styles.iconContainer,
+              styles.seekText,
+              {marginLeft: watchTimeText.length > 5 ? 50 : 100},
+            ]}>
             <Text style={[styles.text, styles.displayText]}>{watchTimeText}</Text>
           </View>
         );
@@ -338,9 +342,11 @@ const styles = StyleSheet.create({
     marginLeft: 5,
   },
   displayText: {
-    width: 180,
-    textAlign: 'center',
+    width: 200,
     marginLeft: 0,
+    textShadowColor: Colors.blackAlpha(60),
+    textShadowOffset: {width: 0, height: 0},
+    textShadowRadius: 5,
   },
   timeText: {
     fontSize: 14,
@@ -350,6 +356,10 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   textWidth: {
-    width: 55,
+    width: 60,
+  },
+  seekText: {
+    backgroundColor: 'transparent',
+    marginLeft: 50,
   },
 });
