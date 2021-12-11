@@ -1,7 +1,9 @@
 import React, {useEffect, useRef, useState} from 'react';
-import {StatusBar, View, ActivityIndicator, StyleSheet, Dimensions, Image} from 'react-native';
+import {StatusBar, View, ActivityIndicator, StyleSheet, Dimensions} from 'react-native';
+import {RefreshControl, AppState} from 'react-native';
 import {Text, ScrollView, TouchableOpacity} from 'react-native';
 import CameraRoll, {GetPhotosParams, PhotoIdentifier} from '@react-native-community/cameraroll';
+import Image from 'react-native-fast-image';
 
 import {hasPermissionAndroid} from './utils';
 import Colors from './colors';
@@ -18,26 +20,31 @@ const Videos = (props: any) => {
 
   useEffect(() => {
     mounted.current = true;
-    setTimeout(() => {
-      hasPermissionAndroid().then(granted => {
-        if (granted) {
-          const folderOptions: GetPhotosParams = {
-            first: count,
-            assetType: 'Videos',
-            groupName: title,
-          };
-          CameraRoll.getPhotos(folderOptions).then(list => {
-            setVideos(list.edges);
-            setLoading(false);
-          });
-        }
-      });
-    }, 0);
+    setTimeout(loadFiles, 0);
+    const appStateListener = AppState.addEventListener('focus', loadFiles);
 
     return () => {
       mounted.current = false;
+      appStateListener.remove();
     };
   }, []);
+
+  const loadFiles = () => {
+    setLoading(true);
+    hasPermissionAndroid().then(granted => {
+      if (granted) {
+        const folderOptions: GetPhotosParams = {
+          first: count,
+          assetType: 'Videos',
+          groupName: title,
+        };
+        CameraRoll.getPhotos(folderOptions).then(list => {
+          setVideos(list.edges);
+          setLoading(false);
+        });
+      }
+    });
+  };
 
   const navigateTo = (route: string, params: any = {}) => {
     props.navigation.navigate(route, params);
@@ -66,8 +73,9 @@ const Videos = (props: any) => {
         <ScrollView
           style={styles.scrollView}
           contentContainerStyle={styles.scrollViewContainer}
-          showsVerticalScrollIndicator={false}>
-          {videos.map((video: PhotoIdentifier, index: number) => {
+          showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl refreshing={isLoading} onRefresh={loadFiles} />}>
+          {videos.map((video: PhotoIdentifier) => {
             const {uri} = video.node.image;
             return (
               <TouchableOpacity onPress={() => navigateTo(Routes.Player, {uri})} key={uri}>
@@ -132,16 +140,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 30,
-    paddingVertical: 20,
+    paddingVertical: 10,
   },
   textContainer: {
     paddingHorizontal: 15,
     marginRight: 30,
   },
   title: {
-    color: Colors.witeAlpha(60),
+    color: Colors.witeAlpha(80),
     fontSize: 14,
     fontWeight: 'bold',
     width: width - 75 - 96,
+  },
+  res: {
+    marginTop: 5,
+    color: Colors.witeAlpha(50),
+    fontSize: 12,
+    fontWeight: 'bold',
   },
 });

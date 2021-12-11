@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import {StatusBar, View, StyleSheet, Dimensions, ActivityIndicator} from 'react-native';
-import {Text, ScrollView, TouchableOpacity} from 'react-native';
+import {Text, ScrollView, TouchableOpacity, RefreshControl, AppState} from 'react-native';
 import CameraRoll, {Album, GetAlbumsParams} from '@react-native-community/cameraroll';
 
 import {hasPermissionAndroid} from './utils';
@@ -15,18 +15,25 @@ const Videos = (props: any) => {
   const [albums, setAlbums] = useState<Array<Album>>([]);
 
   useEffect(() => {
-    setTimeout(() => {
-      hasPermissionAndroid().then(granted => {
-        if (granted) {
-          const folderOptions: GetAlbumsParams = {assetType: 'Videos'};
-          CameraRoll.getAlbums(folderOptions).then((folders: Array<Album>) => {
-            setAlbums(folders);
-            setLoading(false);
-          });
-        }
-      });
-    }, 300);
+    setTimeout(loadAlbums, 300);
+    const appStateListener = AppState.addEventListener('focus', loadAlbums);
+    () => {
+      appStateListener.remove();
+    };
   }, []);
+
+  const loadAlbums = () => {
+    setLoading(true);
+    hasPermissionAndroid().then(granted => {
+      if (granted) {
+        const folderOptions: GetAlbumsParams = {assetType: 'Videos'};
+        CameraRoll.getAlbums(folderOptions).then((folders: Array<Album>) => {
+          setAlbums(folders);
+          setLoading(false);
+        });
+      }
+    });
+  };
 
   const navigateTo = (route: string, params: any = {}) => {
     props.navigation.navigate(route, params);
@@ -49,7 +56,8 @@ const Videos = (props: any) => {
         <ScrollView
           style={styles.scrollView}
           contentContainerStyle={styles.scrollViewContainer}
-          showsVerticalScrollIndicator={false}>
+          showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl refreshing={isLoading} onRefresh={loadAlbums} />}>
           {albums.map((album: Album) => (
             <TouchableOpacity onPress={() => navigateTo(Routes.Videos, album)} key={album.title}>
               <View style={styles.folder}>
@@ -107,7 +115,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 30,
-    paddingVertical: 20,
+    paddingVertical: 10,
   },
   textContainer: {
     paddingHorizontal: 15,

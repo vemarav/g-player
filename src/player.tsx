@@ -1,5 +1,5 @@
 import React, {useState, useEffect, useRef} from 'react';
-import {View, StyleSheet, Linking, StatusBar, Dimensions, Text} from 'react-native';
+import {View, StyleSheet, StatusBar, Dimensions, Text} from 'react-native';
 import Video from 'react-native-video';
 import {GestureHandlerRootView, GestureDetector, Gesture} from 'react-native-gesture-handler';
 import Slider from '@react-native-community/slider';
@@ -19,6 +19,11 @@ const AnimatedSlider = Animated.createAnimatedComponent(Slider);
 enum Swipe {
   HORIZONTAL = 2,
   VERTICAL = 4,
+}
+
+enum VideoOrientation {
+  PORTRAIT = 'P',
+  LANDSCAPE = 'L',
 }
 
 const Player = (props: any) => {
@@ -53,12 +58,15 @@ const Player = (props: any) => {
   const [isControls, setControls] = useState(true);
   const [isBrightness, setIsBrightness] = useState(false);
   const [dimensions, setDimensions] = useState(Dimensions.get('screen'));
+  const [videoOrientation, setVideoOrientation] = useState(VideoOrientation.PORTRAIT);
 
   const videoStyles = useAnimatedStyle(() => {
     return {
       transform: [{scale: scale.value}],
     };
   });
+
+  useEffect(() => {}, [contentUri]);
 
   useCode(() => {
     return call([progress], (progress: any) => {
@@ -89,10 +97,16 @@ const Player = (props: any) => {
   useEffect(() => {
     if (info.value.naturalSize) {
       const {width, height} = info.value.naturalSize;
-      width > height ? Orientation.lockToLandscape() : Orientation.lockToPortrait();
-      setControls(false);
+      setVideoOrientation(width > height ? VideoOrientation.LANDSCAPE : VideoOrientation.PORTRAIT);
     }
   }, [info.value]);
+
+  useEffect(() => {
+    videoOrientation === VideoOrientation.LANDSCAPE
+      ? Orientation.lockToLandscape()
+      : Orientation.lockToPortrait();
+    setControls(false);
+  }, [videoOrientation]);
 
   const tap = Gesture.Tap()
     .numberOfTaps(1)
@@ -117,9 +131,9 @@ const Player = (props: any) => {
     .onUpdate(({x, y}) => {
       switch (swipe) {
         case Swipe.HORIZONTAL: {
-          const dx = x - before.value.translate.x - 30;
-          const change = watchTime.value + (dx / dimensions.width) * (Math.abs(dx) / 3);
-
+          const dx = x - before.value.translate.x;
+          console.log({dx});
+          const change = watchTime.value + dx;
           const seek = change < 0 ? 0 : change > info.value.duration ? info.value.duration : change;
           progress.setValue(seek / info.value.duration);
           videoRef.current?.seek(seek);
@@ -184,6 +198,8 @@ const Player = (props: any) => {
 
   const gestures = Gesture.Race(doubleTap, pan, pinch, tap);
   const size = {width: dimensions.width, height: dimensions.height};
+  const bottom =
+    videoOrientation === VideoOrientation.LANDSCAPE ? {paddingBottom: 20} : {paddingBottom: 55};
 
   const Status = () => {
     switch (true) {
@@ -247,7 +263,7 @@ const Player = (props: any) => {
           </View>
         </GestureDetector>
         {isControls ? (
-          <View style={styles.sliderContainer}>
+          <View style={[styles.sliderContainer, bottom]}>
             <Text style={styles.timeText}>{watchTimeText}</Text>
             <AnimatedSlider
               value={progress}
