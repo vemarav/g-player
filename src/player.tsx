@@ -1,5 +1,5 @@
 import React, {useState, useEffect, useRef} from 'react';
-import {View, StyleSheet, StatusBar, Dimensions, Text} from 'react-native';
+import {View, StyleSheet, StatusBar, Dimensions, Text, TouchableOpacity} from 'react-native';
 import Video from 'react-native-video';
 import {GestureHandlerRootView, GestureDetector, Gesture} from 'react-native-gesture-handler';
 import Slider from '@react-native-community/slider';
@@ -8,10 +8,11 @@ import {useSharedValue, useDerivedValue, useAnimatedStyle} from 'react-native-re
 import SystemSetting from 'react-native-system-setting';
 import Orientation from 'react-native-orientation-locker';
 
+import {getTime, getTimeInSeconds, getValue, hasPermissionAndroid} from './utils';
 import ReText from './retext';
 import Colors from './colors';
 import Icons from '../assets/icons';
-import {getTime, getTimeInSeconds, getValue, hasPermissionAndroid} from './utils';
+import SelectionModal from './selectionModal';
 
 const AnimatedVideo = Animated.createAnimatedComponent(Video);
 const AnimatedSlider = Animated.createAnimatedComponent(Slider);
@@ -37,10 +38,6 @@ const Player = (props: any) => {
     volume: 0,
     brightness: 0,
   });
-  const info = useSharedValue<any>({
-    duration: 0,
-  });
-
   const scale = useSharedValue(1);
   const zoomText = useDerivedValue(() => `${Math.round(scale.value * 100)}%`);
   const volume = useSharedValue(0);
@@ -49,16 +46,30 @@ const Player = (props: any) => {
   const brightnessText = useDerivedValue(() => `${Math.round(brightness.value * 30)}`);
   const progress: Animated.Value<number> = useValue(0);
   const watchTime = useSharedValue(0);
+  const totalTime = useSharedValue(0);
 
-  const [watchTimeText, setWatchTimeText] = useState(getTime(0));
   const [isZoom, setZoom] = useState(false);
   const [swipe, setSwipe] = useState<Swipe>();
   const [isPaused, setPaused] = useState(false);
   const [isVolume, setIsVolume] = useState(false);
   const [isControls, setControls] = useState(true);
   const [isBrightness, setIsBrightness] = useState(false);
+  const [watchTimeText, setWatchTimeText] = useState(getTime(0));
   const [dimensions, setDimensions] = useState(Dimensions.get('screen'));
+  const [info, setInfo] = useState<{
+    [key: string]: any;
+    duration: number;
+    textTracks?: Array<any>;
+    audioTracks?: Array<any>;
+    naturalSize?: {width: number; height: number};
+  }>({duration: 0});
+  const [selectedTextTrack, setSelectedTextTrack] = useState<any>();
+  const [selectedAudioTrack, setSelectedAudioTrack] = useState<any>();
   const [videoOrientation, setVideoOrientation] = useState(VideoOrientation.LANDSCAPE);
+
+  // modals
+  const [subModalVisible, setSubModalVisible] = useState<boolean>(false);
+  const [audioModalVisible, setAudioModalVisible] = useState<boolean>(false);
 
   const videoStyles = useAnimatedStyle(() => {
     return {
@@ -68,7 +79,7 @@ const Player = (props: any) => {
 
   useCode(() => {
     return call([progress], (progress: any) => {
-      watchTime.value = progress * info.value.duration;
+      watchTime.value = progress * totalTime.value;
       setWatchTimeText(getTime(watchTime.value));
     });
   }, [progress]);
@@ -94,18 +105,23 @@ const Player = (props: any) => {
   }, []);
 
   useEffect(() => {
-    if (info.value.naturalSize) {
-      const {width, height} = info.value.naturalSize;
-      setVideoOrientation(width > height ? VideoOrientation.LANDSCAPE : VideoOrientation.PORTRAIT);
-    }
-  }, [info.value]);
+    if (info.duration) totalTime.value = info.duration;
+    if (info.audioTracks) setSelectedAudioTrack(info.audioTracks[0]);
+  }, [info]);
 
   useEffect(() => {
     videoOrientation === VideoOrientation.LANDSCAPE
       ? Orientation.lockToLandscape()
       : Orientation.lockToPortrait();
-    setControls(false);
   }, [videoOrientation]);
+
+  const toggleOrientation = () => {
+    setVideoOrientation(
+      videoOrientation === VideoOrientation.LANDSCAPE
+        ? VideoOrientation.PORTRAIT
+        : VideoOrientation.LANDSCAPE,
+    );
+  };
 
   const seekTo = (seconds: number, precision?: number) => {
     videoRef.current?.seek(seconds, precision ?? 50);
@@ -136,7 +152,7 @@ const Player = (props: any) => {
         case Swipe.HORIZONTAL: {
           const dx = x - before.value.translate.x;
           const change = watchTime.value + dx / 5;
-          const seek = change < 0 ? 0 : change > info.value.duration ? info.value.duration : change;
+          const seek = change < 0 ? 0 : change > totalTime.value ? totalTime.value : change;
           setWatchTimeText(getTime(seek));
           seekTo(seek);
         }
@@ -170,7 +186,7 @@ const Player = (props: any) => {
     })
     .onEnd(() => {
       const currentTime = getTimeInSeconds(watchTimeText);
-      if (info.value.duration) progress.setValue(currentTime / info.value.duration);
+      if (totalTime.value) progress.setValue(currentTime / totalTime.value);
       if (swipe === Swipe.HORIZONTAL) setPaused(false);
       setSwipe(undefined);
       setIsVolume(false);
@@ -189,13 +205,13 @@ const Player = (props: any) => {
     .onEnd(() => setZoom(false));
 
   const updateSliderProgress = ({currentTime}: {currentTime: number}) => {
-    const played = currentTime / info.value.duration;
-    if (!isNaN(played)) progress.setValue(played);
+    const played = currentTime / totalTime.value;
+    progress.setValue(isNaN(played) ? 0 : played);
   };
 
   const onSliding = (value: number) => {
     progress.setValue(value);
-    seekTo(value * info.value.duration);
+    seekTo(value * totalTime.value);
   };
 
   const onSlidingStart = () => setPaused(true);
@@ -261,12 +277,18 @@ const Player = (props: any) => {
               fullscreen={!isControls}
               ref={videoRef}
               paused={isPaused}
-              onLoad={data => (info.value = data)}
+              onLoad={setInfo}
               resizeMode={'contain'}
               onProgress={updateSliderProgress}
               source={{uri: uri ?? contentUri}}
               style={[styles.video, size, videoStyles]}
               useTextureView={false}
+              selectedTextTrack={
+                selectedTextTrack ? {type: 'index', value: selectedTextTrack.index} : undefined
+              }
+              selectedAudioTrack={
+                selectedAudioTrack ? {type: 'index', value: selectedAudioTrack.index} : undefined
+              }
             />
             <View style={[styles.iconHolder, size]}>
               <Status />
@@ -274,22 +296,52 @@ const Player = (props: any) => {
           </View>
         </GestureDetector>
         {isControls ? (
-          <View style={[styles.sliderContainer, bottom]}>
-            <Text style={styles.timeText}>{watchTimeText}</Text>
-            <AnimatedSlider
-              value={progress}
-              style={styles.slider}
-              thumbTintColor={Colors.white}
-              minimumTrackTintColor={Colors.white}
-              maximumTrackTintColor={Colors.white}
-              onSlidingStart={onSlidingStart}
-              onSlidingComplete={onSlidingEnd}
-              onValueChange={onSliding}
-            />
-            <Text style={styles.timeText}>{getTime(info.value.duration)}</Text>
-          </View>
+          <>
+            <View style={[styles.trackIcons]}>
+              <TouchableOpacity style={styles.controlIcon} onPress={toggleOrientation}>
+                <Icons.ScreenRotation width={28} height={28} />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.controlIcon} onPress={() => setSubModalVisible(true)}>
+                <Icons.Subtitles width={28} height={28} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.controlIcon}
+                onPress={() => setAudioModalVisible(true)}>
+                <Icons.Audio width={28} height={28} />
+              </TouchableOpacity>
+            </View>
+            <View style={[styles.sliderContainer, bottom]}>
+              <Text style={styles.timeText}>{watchTimeText}</Text>
+              <AnimatedSlider
+                value={progress}
+                style={styles.slider}
+                thumbTintColor={Colors.white}
+                minimumTrackTintColor={Colors.white}
+                maximumTrackTintColor={Colors.white}
+                onSlidingStart={onSlidingStart}
+                onSlidingComplete={onSlidingEnd}
+                onValueChange={onSliding}
+              />
+              <Text style={styles.timeText}>{getTime(totalTime.value)}</Text>
+            </View>
+          </>
         ) : null}
       </GestureHandlerRootView>
+
+      <SelectionModal
+        title={subModalVisible ? 'Subtitles' : 'Audio'}
+        selected={subModalVisible ? selectedTextTrack : selectedAudioTrack}
+        data={subModalVisible ? info.textTracks : info.audioTracks}
+        isVisible={subModalVisible || audioModalVisible}
+        onCancel={() => {
+          setSubModalVisible(false);
+          setAudioModalVisible(false);
+        }}
+        onSelect={track =>
+          subModalVisible ? setSelectedTextTrack(track) : setSelectedAudioTrack(track)
+        }
+        {...dimensions}
+      />
     </>
   );
 };
@@ -367,5 +419,19 @@ const styles = StyleSheet.create({
   seekText: {
     backgroundColor: 'transparent',
     marginLeft: 50,
+  },
+  trackIcons: {
+    position: 'absolute',
+    padding: 20,
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    flexDirection: 'row',
+  },
+  controlIcon: {
+    padding: 15,
+    backgroundColor: Colors.blackAlpha(50),
+    marginHorizontal: 10,
+    borderRadius: 5,
   },
 });

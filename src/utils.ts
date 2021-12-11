@@ -23,14 +23,6 @@ export const getTimeInSeconds = (time: string): number => {
   return +timeInSec;
 };
 
-export const usePrevious = (value: any): boolean => {
-  const ref = useRef();
-  useEffect(() => {
-    ref.current = value;
-  }, [value]);
-  return ref.current ?? false;
-};
-
 export const hasPermissionAndroid = async () => {
   const permission = PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE;
   const hasPermission = await PermissionsAndroid.check(permission);
