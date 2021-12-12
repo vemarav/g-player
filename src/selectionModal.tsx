@@ -7,32 +7,32 @@ import CheckBox from '@react-native-community/checkbox';
 import Colors from './colors';
 
 interface Item {
-  title?: string;
+  title?: string | number;
   language?: string;
   index?: number;
 }
 
-interface Props {
-  title: string;
-  width: number;
-  height: number;
+export interface SelectionModalProps {
+  title?: string;
+  width?: number;
+  height?: number;
   isVisible: boolean;
   onSelect?: (item?: Item) => void;
   onCancel?: () => void;
-  selected: Item;
+  selected?: Item;
   data?: Array<Item>;
   [key: string]: any;
 }
 
-const SelectionModal = (props: Props) => {
+const SelectionModal = (props: SelectionModalProps) => {
   const {
     title,
     data = [],
     isVisible = false,
     onSelect = () => {},
     onCancel = () => {},
-    width,
-    height,
+    width = 300,
+    height = 300,
     selected = {},
   } = props;
 
@@ -53,25 +53,29 @@ const SelectionModal = (props: Props) => {
                 contentContainerStyle={styles.scrollContainer}
                 showsVerticalScrollIndicator={false}>
                 {data.map(item => (
-                  <View key={item.title} style={styles.item}>
+                  <TouchableOpacity onPress={() => onSelect(item)} key={item.title}>
+                    <View style={styles.item}>
+                      <CheckBox
+                        value={selected?.title === item.title}
+                        onValueChange={() => onSelect(item)}
+                        tintColors={{true: Colors.witeAlpha(80), false: Colors.witeAlpha(50)}}
+                      />
+                      <Text style={styles.title}>
+                        {`${item?.language ?? item?.title ?? item?.index}`.toString().toUpperCase()}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                ))}
+                {title === 'Playback Speed' ? null : (
+                  <View style={styles.item}>
                     <CheckBox
-                      value={selected?.title === item.title}
-                      onValueChange={() => onSelect(item)}
+                      value={!selected?.title}
+                      onValueChange={() => onSelect(undefined)}
                       tintColors={{true: Colors.witeAlpha(80), false: Colors.witeAlpha(50)}}
                     />
-                    <Text style={styles.title}>
-                      {`${item?.language ?? item?.title ?? item?.index}`.toString().toUpperCase()}
-                    </Text>
+                    <Text style={styles.title}>NONE</Text>
                   </View>
-                ))}
-                <View style={styles.item}>
-                  <CheckBox
-                    value={!selected?.title}
-                    onValueChange={_ => onSelect(undefined)}
-                    tintColors={{true: Colors.witeAlpha(80), false: Colors.witeAlpha(50)}}
-                  />
-                  <Text style={styles.title}>NONE</Text>
-                </View>
+                )}
               </ScrollView>
             </View>
           </TouchableWithoutFeedback>

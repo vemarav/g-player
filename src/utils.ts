@@ -1,4 +1,3 @@
-import {useRef, useEffect} from 'react';
 import {Alert, BackHandler, Linking, PermissionsAndroid} from 'react-native';
 
 export const getValue = (animated: any) => {
@@ -37,9 +36,12 @@ const showDialog = () => {
     'In order to play video, app needs access to media files on your device. Go to settings to enable the permission.',
     [
       {text: 'EXIT APP', onPress: BackHandler.exitApp},
-      {text: 'OPEN APP SETTING', onPress: Linking.openSettings},
+      {
+        text: 'OPEN APP SETTING',
+        onPress: Linking.openSettings,
+      },
     ],
-    {cancelable: false},
+    {cancelable: true},
   );
   return false;
 };

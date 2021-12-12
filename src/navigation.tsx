@@ -7,10 +7,15 @@ import Player from './player';
 import Folder from './folders';
 import Routes from './routes';
 import linking from './linking';
+import {hasPermissionAndroid} from './utils';
 
 const Stack = createNativeStackNavigator();
 
 const Navigation = () => {
+  React.useEffect(() => {
+    hasPermissionAndroid();
+  }, []);
+
   return (
     <NavigationContainer linking={linking}>
       <Stack.Navigator>

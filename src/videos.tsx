@@ -5,7 +5,6 @@ import {Text, ScrollView, TouchableOpacity} from 'react-native';
 import CameraRoll, {GetPhotosParams, PhotoIdentifier} from '@react-native-community/cameraroll';
 import Image from 'react-native-fast-image';
 
-import {hasPermissionAndroid} from './utils';
 import Colors from './colors';
 import Icons from '../assets/icons';
 import Routes from './routes';
@@ -34,10 +33,9 @@ const Videos = (props: any) => {
   const loadFiles = async () => {
     setLoading(true);
     try {
-      const granted = await hasPermissionAndroid();
-      if (granted) setVideos((await CameraRoll.getPhotos(folderOptions)).edges);
+      setVideos((await CameraRoll.getPhotos(folderOptions)).edges);
     } catch (err) {
-      console.log(err);
+      console.error(err);
     }
     setLoading(false);
   };

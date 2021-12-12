@@ -18,7 +18,6 @@
     "react": "17.0.2",
     "react-native": "0.66.3",
     "react-native-fast-image": "^8.5.11",
-    "react-native-fs": "^2.18.0",
     "react-native-gesture-handler": "^2.0.0",
     "react-native-orientation-locker": "^1.4.0",
     "react-native-reanimated": "^2.2.4",

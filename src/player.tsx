@@ -1,5 +1,6 @@
 import React, {useState, useEffect, useRef} from 'react';
-import {View, StyleSheet, StatusBar, Dimensions, Text, TouchableOpacity} from 'react-native';
+import {View, StyleSheet, StatusBar, ActivityIndicator} from 'react-native';
+import {TouchableOpacity, Dimensions, Text} from 'react-native';
 import Video from 'react-native-video';
 import {GestureHandlerRootView, GestureDetector, Gesture} from 'react-native-gesture-handler';
 import Slider from '@react-native-community/slider';
@@ -8,11 +9,24 @@ import {useSharedValue, useDerivedValue, useAnimatedStyle} from 'react-native-re
 import SystemSetting from 'react-native-system-setting';
 import Orientation from 'react-native-orientation-locker';
 
-import {getTime, getTimeInSeconds, getValue, hasPermissionAndroid} from './utils';
+import {getTime, getTimeInSeconds, getValue} from './utils';
 import ReText from './retext';
 import Colors from './colors';
 import Icons from '../assets/icons';
-import SelectionModal from './selectionModal';
+import SelectionModal, {SelectionModalProps} from './selectionModal';
+
+interface Info {
+  [key: string]: any;
+  duration: number;
+  textTracks?: Array<any>;
+  audioTracks?: Array<any>;
+  naturalSize?: {width: number; height: number};
+}
+
+interface Track {
+  type: 'system' | 'disabled' | 'title' | 'language' | 'index';
+  value?: string | number | undefined;
+}
 
 const AnimatedVideo = Animated.createAnimatedComponent(Video);
 const AnimatedSlider = Animated.createAnimatedComponent(Slider);
@@ -27,9 +41,17 @@ enum VideoOrientation {
   LANDSCAPE = 'L',
 }
 
+enum ModalType {
+  NONE = 'none',
+  AUDIO = 'audio',
+  SUBTITLE = 'subtitle',
+  PLAYBACK_SPEED = 'playbackSpeed',
+}
+
 const Player = (props: any) => {
-  const {uri} = props.route.params;
+  const {uri} = props.route.params ?? {};
   const contentUri = `content://${props.route.path}`;
+  let modalProps: SelectionModalProps = {isVisible: false};
 
   const videoRef: React.Ref<Video> = useRef(null);
   const before = useSharedValue({
@@ -52,30 +74,23 @@ const Player = (props: any) => {
   const [swipe, setSwipe] = useState<Swipe>();
   const [isPaused, setPaused] = useState(false);
   const [isVolume, setIsVolume] = useState(false);
-  const [isControls, setControls] = useState(true);
+  const [isLoading, setLoading] = useState(true);
+  const [isControls, setControls] = useState(false);
+  const [info, setInfo] = useState<Info>({duration: 0});
   const [isBrightness, setIsBrightness] = useState(false);
   const [watchTimeText, setWatchTimeText] = useState(getTime(0));
   const [dimensions, setDimensions] = useState(Dimensions.get('screen'));
-  const [info, setInfo] = useState<{
-    [key: string]: any;
-    duration: number;
-    textTracks?: Array<any>;
-    audioTracks?: Array<any>;
-    naturalSize?: {width: number; height: number};
-  }>({duration: 0});
-  const [selectedTextTrack, setSelectedTextTrack] = useState<any>();
-  const [selectedAudioTrack, setSelectedAudioTrack] = useState<any>();
   const [videoOrientation, setVideoOrientation] = useState(VideoOrientation.LANDSCAPE);
 
-  // modals
-  const [subModalVisible, setSubModalVisible] = useState<boolean>(false);
-  const [audioModalVisible, setAudioModalVisible] = useState<boolean>(false);
+  // tracks
+  const [selectedTextTrack, setSelectedTextTrack] = useState<any>();
+  const [selectedAudioTrack, setSelectedAudioTrack] = useState<any>();
+  const [selectedPlaybackSpeed, setPlaybackSpeed] = useState<any>({title: 1});
 
-  const videoStyles = useAnimatedStyle(() => {
-    return {
-      transform: [{scale: scale.value}],
-    };
-  });
+  // modals
+  const [modalType, setModalType] = useState<ModalType>(ModalType.NONE);
+
+  const videoStyles = useAnimatedStyle(() => ({transform: [{scale: scale.value}]}));
 
   useCode(() => {
     return call([progress], (progress: any) => {
@@ -85,7 +100,7 @@ const Player = (props: any) => {
   }, [progress]);
 
   useEffect(() => {
-    hasPermissionAndroid();
+    setLoading(true);
     const dimensionSub = Dimensions.addEventListener('change', ({screen}) => {
       setDimensions(screen);
     });
@@ -173,10 +188,7 @@ const Player = (props: any) => {
         default: {
           const dx = Math.abs(before.value.translate.x - x);
           const dy = Math.abs(before.value.translate.y - y);
-          if (dx > 30 && dy < 30) {
-            setSwipe(Swipe.HORIZONTAL);
-            setPaused(true);
-          }
+          if (dx > 30 && dy < 30) setSwipe(Swipe.HORIZONTAL);
           if (dy > 30 && dx < 30) {
             setSwipe(Swipe.VERTICAL);
             x > dimensions.width / 2 ? setIsVolume(true) : setIsBrightness(true);
@@ -187,7 +199,6 @@ const Player = (props: any) => {
     .onEnd(() => {
       const currentTime = getTimeInSeconds(watchTimeText);
       if (totalTime.value) progress.setValue(currentTime / totalTime.value);
-      if (swipe === Swipe.HORIZONTAL) setPaused(false);
       setSwipe(undefined);
       setIsVolume(false);
       setIsBrightness(false);
@@ -206,7 +217,7 @@ const Player = (props: any) => {
 
   const updateSliderProgress = ({currentTime}: {currentTime: number}) => {
     const played = currentTime / totalTime.value;
-    progress.setValue(isNaN(played) ? 0 : played);
+    progress.setValue(isNaN(played) || !isFinite(played) ? 0 : played);
   };
 
   const onSliding = (value: number) => {
@@ -221,6 +232,52 @@ const Player = (props: any) => {
   const size = {width: dimensions.width, height: dimensions.height};
   const bottom =
     videoOrientation === VideoOrientation.LANDSCAPE ? {paddingBottom: 20} : {paddingBottom: 55};
+
+  switch (modalType) {
+    case ModalType.SUBTITLE:
+      modalProps = {
+        title: 'Subtitle',
+        selected: selectedTextTrack,
+        data: info.textTracks,
+        isVisible: true,
+        width: dimensions.width,
+        height: dimensions.height,
+        onSelect: setSelectedTextTrack,
+      };
+      break;
+    case ModalType.AUDIO:
+      modalProps = {
+        title: 'Audio',
+        selected: selectedAudioTrack,
+        data: info.audioTracks,
+        isVisible: true,
+        width: dimensions.width,
+        height: dimensions.height,
+        onSelect: setSelectedAudioTrack,
+      };
+      break;
+    case ModalType.PLAYBACK_SPEED:
+      modalProps = {
+        title: 'Playback Speed',
+        selected: selectedPlaybackSpeed,
+        data: [{title: 0.5}, {title: 0.75}, {title: 1}, {title: 1.5}, {title: 1.75}, {title: 2}],
+        isVisible: true,
+        width: dimensions.width,
+        height: dimensions.height,
+        onSelect: setPlaybackSpeed,
+      };
+      break;
+    default:
+      modalProps = {isVisible: false};
+  }
+
+  const textTrack: Track = selectedTextTrack
+    ? {type: 'index', value: selectedTextTrack.index}
+    : {type: 'disabled'};
+
+  const audioTrack: Track = selectedAudioTrack
+    ? {type: 'index', value: selectedAudioTrack.index}
+    : {type: 'disabled'};
 
   const Status = () => {
     switch (true) {
@@ -255,6 +312,12 @@ const Player = (props: any) => {
             <ReText text={brightnessText} style={[styles.text, styles.textWidth]} />
           </View>
         );
+      case isLoading:
+        return (
+          <View style={styles.iconContainer}>
+            <ActivityIndicator size={styles.icon.width} color={Colors.white} />
+          </View>
+        );
       case isPaused && isControls:
         return (
           <View style={styles.iconContainer}>
@@ -273,41 +336,49 @@ const Player = (props: any) => {
         <GestureDetector gesture={gestures}>
           <View style={[styles.overlay]}>
             <AnimatedVideo
-              repeat
-              fullscreen={!isControls}
               ref={videoRef}
-              paused={isPaused}
               onLoad={setInfo}
-              resizeMode={'contain'}
-              onProgress={updateSliderProgress}
-              source={{uri: uri ?? contentUri}}
-              style={[styles.video, size, videoStyles]}
+              paused={isPaused}
               useTextureView={false}
-              selectedTextTrack={
-                selectedTextTrack ? {type: 'index', value: selectedTextTrack.index} : undefined
-              }
-              selectedAudioTrack={
-                selectedAudioTrack ? {type: 'index', value: selectedAudioTrack.index} : undefined
-              }
+              resizeMode={'contain'}
+              fullscreen={!isControls}
+              selectedTextTrack={textTrack}
+              selectedAudioTrack={audioTrack}
+              onEnd={props.navigation.goBack}
+              onProgress={updateSliderProgress}
+              progressUpdateInterval={500}
+              source={{uri: uri ?? contentUri}}
+              rate={selectedPlaybackSpeed.title}
+              onReadyForDisplay={() => setLoading(false)}
+              style={[styles.video, size, videoStyles]}
             />
             <View style={[styles.iconHolder, size]}>
               <Status />
             </View>
           </View>
         </GestureDetector>
-        {isControls ? (
+        {isControls && !isLoading ? (
           <>
             <View style={[styles.trackIcons]}>
-              <TouchableOpacity style={styles.controlIcon} onPress={toggleOrientation}>
-                <Icons.ScreenRotation width={28} height={28} />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.controlIcon} onPress={() => setSubModalVisible(true)}>
-                <Icons.Subtitles width={28} height={28} />
+              <TouchableOpacity
+                style={styles.controlIcon}
+                onPress={() => setModalType(ModalType.PLAYBACK_SPEED)}>
+                <Text style={[styles.controlIconSize, styles.controlText]}>
+                  {selectedPlaybackSpeed.title}X
+                </Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.controlIcon}
-                onPress={() => setAudioModalVisible(true)}>
-                <Icons.Audio width={28} height={28} />
+                onPress={() => setModalType(ModalType.SUBTITLE)}>
+                <Icons.Subtitles {...styles.controlIconSize} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.controlIcon}
+                onPress={() => setModalType(ModalType.AUDIO)}>
+                <Icons.Audio {...styles.controlIconSize} />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.controlIcon} onPress={toggleOrientation}>
+                <Icons.ScreenRotation {...styles.controlIconSize} />
               </TouchableOpacity>
             </View>
             <View style={[styles.sliderContainer, bottom]}>
@@ -328,20 +399,7 @@ const Player = (props: any) => {
         ) : null}
       </GestureHandlerRootView>
 
-      <SelectionModal
-        title={subModalVisible ? 'Subtitles' : 'Audio'}
-        selected={subModalVisible ? selectedTextTrack : selectedAudioTrack}
-        data={subModalVisible ? info.textTracks : info.audioTracks}
-        isVisible={subModalVisible || audioModalVisible}
-        onCancel={() => {
-          setSubModalVisible(false);
-          setAudioModalVisible(false);
-        }}
-        onSelect={track =>
-          subModalVisible ? setSelectedTextTrack(track) : setSelectedAudioTrack(track)
-        }
-        {...dimensions}
-      />
+      <SelectionModal {...modalProps} onCancel={() => setModalType(ModalType.NONE)} />
     </>
   );
 };
@@ -433,5 +491,18 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.blackAlpha(50),
     marginHorizontal: 10,
     borderRadius: 5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  controlIconSize: {
+    width: 28,
+    height: 28,
+  },
+  controlText: {
+    color: Colors.white,
+    fontSize: 24,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    textAlignVertical: 'center',
   },
 });

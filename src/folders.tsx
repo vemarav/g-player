@@ -1,9 +1,8 @@
 import React, {useEffect, useState} from 'react';
-import {StatusBar, View, StyleSheet, Dimensions} from 'react-native';
+import {StatusBar, View, StyleSheet, Dimensions, AppStateStatus} from 'react-native';
 import {Text, ScrollView, TouchableOpacity, RefreshControl, AppState} from 'react-native';
 import CameraRoll, {Album, GetAlbumsParams} from '@react-native-community/cameraroll';
 
-import {hasPermissionAndroid} from './utils';
 import Colors from './colors';
 import Icons from '../assets/icons';
 import Routes from './routes';
@@ -18,17 +17,16 @@ const Folders = (props: any) => {
 
   useEffect(() => {
     loadAlbums();
-    const appStateListener = AppState.addEventListener('focus', loadAlbums);
+    const appStateListener = AppState.addEventListener('change', loadAlbums);
     () => {
       appStateListener.remove();
     };
   }, []);
 
-  const loadAlbums = async () => {
+  const loadAlbums = async (s?: AppStateStatus) => {
     setLoading(true);
     try {
-      const granted = await hasPermissionAndroid();
-      if (granted) setAlbums(await CameraRoll.getAlbums(folderOptions));
+      setAlbums(await CameraRoll.getAlbums(folderOptions));
     } catch (err) {
       console.error(err);
     }
