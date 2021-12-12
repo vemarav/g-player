@@ -5,6 +5,7 @@ const linking = {
   prefixes: ['content://'],
   subscribe(listener: (url: string) => void) {
     const onReceiveURL = ({url}: {url: string}) => listener(url);
+
     // Listen to incoming links from deep linking
     Linking.addEventListener('url', onReceiveURL);
 
@@ -16,7 +17,7 @@ const linking = {
   },
   config: {
     screens: {
-      [Routes.Player]: 'media/external/file/:id',
+      [Routes.Player]: '*',
     },
   },
 };
