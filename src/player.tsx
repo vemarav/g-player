@@ -47,6 +47,7 @@ enum ModalType {
 
 const AnimatedVideo = Animated.createAnimatedComponent(Video);
 const AnimatedSlider = Animated.createAnimatedComponent(Slider);
+const WINDOW = Dimensions.get('window');
 
 const Player = (props: any) => {
   const {uri} = props.route.params ?? {};
@@ -246,8 +247,11 @@ const Player = (props: any) => {
 
   const gestures = Gesture.Race(doubleTap, pan, pinch, tap);
   const size = {width: dimensions.width, height: dimensions.height};
+  const bottomHeight = Math.max(size.height, size.width) - Math.max(WINDOW.height, WINDOW.width);
   const bottom =
-    videoOrientation === VideoOrientation.LANDSCAPE ? {paddingBottom: 20} : {paddingBottom: 55};
+    videoOrientation === VideoOrientation.LANDSCAPE
+      ? {paddingBottom: 20}
+      : {paddingBottom: bottomHeight};
 
   switch (modalType) {
     case ModalType.SUBTITLE:
