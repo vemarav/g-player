@@ -1,5 +1,5 @@
 import React, {useState, useEffect, useRef} from 'react';
-import {View, StyleSheet, StatusBar, ActivityIndicator} from 'react-native';
+import {View, StyleSheet, StatusBar, ActivityIndicator, Alert} from 'react-native';
 import {TouchableOpacity, Dimensions, Text} from 'react-native';
 import Video from 'react-native-video';
 import {GestureHandlerRootView, GestureDetector, Gesture} from 'react-native-gesture-handler';
@@ -9,7 +9,7 @@ import {useSharedValue, useDerivedValue, useAnimatedStyle} from 'react-native-re
 import SystemSetting from 'react-native-system-setting';
 import Orientation from 'react-native-orientation-locker';
 
-import {getTime, getTimeInSeconds, getValue} from './utils';
+import {encoder, getTime, getTimeInSeconds, getValue} from './utils';
 import ReText from './retext';
 import Colors from './colors';
 import Icons from '../assets/icons';
@@ -28,9 +28,6 @@ interface Track {
   value?: string | number | undefined;
 }
 
-const AnimatedVideo = Animated.createAnimatedComponent(Video);
-const AnimatedSlider = Animated.createAnimatedComponent(Slider);
-
 enum Swipe {
   HORIZONTAL = 2,
   VERTICAL = 4,
@@ -48,9 +45,13 @@ enum ModalType {
   PLAYBACK_SPEED = 'playbackSpeed',
 }
 
+const AnimatedVideo = Animated.createAnimatedComponent(Video);
+const AnimatedSlider = Animated.createAnimatedComponent(Slider);
+
 const Player = (props: any) => {
   const {uri} = props.route.params ?? {};
   const contentUri = `content://${props.route.path}`;
+  const videoUri = encoder(uri ?? contentUri);
   let modalProps: SelectionModalProps = {isVisible: false};
 
   const videoRef: React.Ref<Video> = useRef(null);
@@ -228,6 +229,21 @@ const Player = (props: any) => {
   const onSlidingStart = () => setPaused(true);
   const onSlidingEnd = () => setTimeout(() => setPaused(false), 50);
 
+  const onError = () => {
+    const goBack = () => props.navigation.goBack();
+    Alert.alert(
+      '',
+      'Cannot play this video.',
+      [
+        {
+          text: 'OK',
+          onPress: goBack,
+        },
+      ],
+      {onDismiss: goBack},
+    );
+  };
+
   const gestures = Gesture.Race(doubleTap, pan, pinch, tap);
   const size = {width: dimensions.width, height: dimensions.height};
   const bottom =
@@ -339,15 +355,16 @@ const Player = (props: any) => {
               ref={videoRef}
               onLoad={setInfo}
               paused={isPaused}
+              onError={onError}
               useTextureView={false}
               resizeMode={'contain'}
+              source={{uri: videoUri}}
               fullscreen={!isControls}
               selectedTextTrack={textTrack}
               selectedAudioTrack={audioTrack}
               onEnd={props.navigation.goBack}
               onProgress={updateSliderProgress}
               progressUpdateInterval={500}
-              source={{uri: uri ?? contentUri}}
               rate={selectedPlaybackSpeed.title}
               onReadyForDisplay={() => setLoading(false)}
               style={[styles.video, size, videoStyles]}

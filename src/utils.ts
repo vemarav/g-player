@@ -45,3 +45,9 @@ const showDialog = () => {
   );
   return false;
 };
+
+export const encoder = (url: string) =>
+  url
+    .split('/')
+    .map((s: string) => (s.includes(':') ? s : encodeURIComponent(s)))
+    .join('/');
