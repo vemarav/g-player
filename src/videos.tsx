@@ -8,6 +8,7 @@ import Image from 'react-native-fast-image';
 import Colors from './colors';
 import Icons from '../assets/icons';
 import Routes from './routes';
+import {encoder} from './utils';
 
 const {width} = Dimensions.get('screen');
 
@@ -67,7 +68,7 @@ const Videos = (props: any) => {
           return (
             <TouchableOpacity onPress={() => navigateTo(Routes.Player, {uri})} key={uri}>
               <View style={styles.folder}>
-                <Image source={{uri}} style={styles.video} />
+                <Image source={{uri: encoder(uri)}} style={styles.video} />
                 <View style={styles.textContainer}>
                   <Text style={styles.title}>{uri.split(`${title}/`)[1]}</Text>
                 </View>

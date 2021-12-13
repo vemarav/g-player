@@ -41,6 +41,23 @@ const SelectionModal = (props: SelectionModalProps) => {
     height: height * (width > height ? 0.7 : 0.5),
   };
 
+  const Option = (item?: Item) => {
+    return (
+      <TouchableOpacity onPress={() => onSelect(item)} key={`${item?.title}`}>
+        <View style={styles.item}>
+          <CheckBox
+            value={selected?.title === item?.title}
+            onValueChange={() => onSelect(item)}
+            tintColors={{true: Colors.witeAlpha(80), false: Colors.witeAlpha(50)}}
+          />
+          <Text style={styles.title}>
+            {`${item?.language ?? item?.title ?? item?.index ?? 'NONE'}`.toString().toUpperCase()}
+          </Text>
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
   return (
     <Modal visible={isVisible} animationType="slide" transparent={true} statusBarTranslucent={true}>
       <StatusBar hidden />
@@ -53,29 +70,9 @@ const SelectionModal = (props: SelectionModalProps) => {
                 contentContainerStyle={styles.scrollContainer}
                 showsVerticalScrollIndicator={false}>
                 {data.map(item => (
-                  <TouchableOpacity onPress={() => onSelect(item)} key={item.title}>
-                    <View style={styles.item}>
-                      <CheckBox
-                        value={selected?.title === item.title}
-                        onValueChange={() => onSelect(item)}
-                        tintColors={{true: Colors.witeAlpha(80), false: Colors.witeAlpha(50)}}
-                      />
-                      <Text style={styles.title}>
-                        {`${item?.language ?? item?.title ?? item?.index}`.toString().toUpperCase()}
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
+                  <Option key={item.title} {...item} />
                 ))}
-                {title === 'Playback Speed' ? null : (
-                  <View style={styles.item}>
-                    <CheckBox
-                      value={!selected?.title}
-                      onValueChange={() => onSelect(undefined)}
-                      tintColors={{true: Colors.witeAlpha(80), false: Colors.witeAlpha(50)}}
-                    />
-                    <Text style={styles.title}>NONE</Text>
-                  </View>
-                )}
+                {title === 'Playback Speed' ? null : Option()}
               </ScrollView>
             </View>
           </TouchableWithoutFeedback>
