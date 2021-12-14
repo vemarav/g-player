@@ -1,15 +1,16 @@
 import React, {useEffect, useState} from 'react';
-import {StatusBar, View, StyleSheet, Dimensions, AppStateStatus} from 'react-native';
+import {StatusBar, View, AppStateStatus} from 'react-native';
 import {Text, ScrollView, TouchableOpacity, RefreshControl, AppState} from 'react-native';
 import CameraRoll, {Album, GetAlbumsParams} from '@react-native-community/cameraroll';
 
-import Colors from './colors';
-import Icons from '../assets/icons';
-import Routes from './routes';
-
-const {width} = Dimensions.get('screen');
+import Icons from '../../assets/icons';
+import {Colors} from '../styles/themes';
+import Routes from '../navigation/routes';
+import applyStyles from '../styles/screens/folders';
+import Header from '../components/header';
 
 const Folders = (props: any) => {
+  const styles = applyStyles();
   const folderOptions: GetAlbumsParams = {assetType: 'Videos'};
 
   const [isLoading, setLoading] = useState<boolean>(true);
@@ -41,11 +42,7 @@ const Folders = (props: any) => {
 
   return (
     <View style={styles.container}>
-      <StatusBar hidden={false} />
-      <View style={styles.border}>
-        <Text style={styles.header}>Folders</Text>
-      </View>
-
+      <Header title="Folders" />
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollViewContainer}
@@ -70,60 +67,3 @@ const Folders = (props: any) => {
 };
 
 export default Folders;
-
-const styles = StyleSheet.create({
-  loader: {
-    flex: 1,
-    justifyContent: 'center',
-    backgroundColor: Colors.black,
-  },
-  container: {
-    flex: 1,
-    backgroundColor: Colors.black,
-  },
-  border: {
-    borderBottomWidth: 1,
-    borderColor: Colors.witeAlpha(85),
-  },
-  header: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: Colors.white,
-    paddingHorizontal: 30,
-    paddingVertical: 15,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollViewContainer: {
-    paddingVertical: 10,
-  },
-  icon: {
-    color: Colors.witeAlpha(85),
-    width: 48,
-    height: 48,
-  },
-  folder: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 30,
-    paddingVertical: 10,
-  },
-  textContainer: {
-    paddingHorizontal: 15,
-    marginRight: 30,
-  },
-  title: {
-    marginTop: 4,
-    color: Colors.witeAlpha(80),
-    fontSize: 16,
-    fontWeight: 'bold',
-    width: width - 75 - 48,
-  },
-  count: {
-    marginTop: 2,
-    color: Colors.witeAlpha(50),
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-});
