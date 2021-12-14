@@ -365,7 +365,7 @@ const Player = (props: any) => {
       <StatusBar hidden />
       <GestureHandlerRootView>
         <GestureDetector gesture={gestures}>
-          <View>
+          <View style={styles.background}>
             <AnimatedVideo
               source={{uri}}
               ref={videoRef}
