@@ -14,11 +14,11 @@ import {hasPermissionAndroid} from './common/utils';
 import {AppState, AppStateStatus} from 'react-native';
 
 const config = {
-  animatin: 'timing',
+  animation: 'timing',
   config: {duration: 3000},
 };
 
-const transitionSpec: any = {
+const transitionSpec = {
   transitionSpec: {
     open: config,
     close: config,
