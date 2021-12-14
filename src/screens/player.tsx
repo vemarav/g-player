@@ -256,7 +256,7 @@ const Player = (props: any) => {
     );
   };
 
-  const gestures = Gesture.Race(doubleTap, pan, pinch, tap);
+  const gestures = Gesture.Exclusive(doubleTap, tap, pan, pinch);
   const size = {width: dimensions.width, height: dimensions.height};
   const bottomHeight = Math.max(size.height, size.width) - Math.max(WINDOW.height, WINDOW.width);
   const bottom =
@@ -365,7 +365,7 @@ const Player = (props: any) => {
       <StatusBar hidden />
       <GestureHandlerRootView>
         <GestureDetector gesture={gestures}>
-          <View>
+          <View style={styles.background}>
             <AnimatedVideo
               source={{uri}}
               ref={videoRef}

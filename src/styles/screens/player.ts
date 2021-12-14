@@ -3,6 +3,9 @@ import {Colors, Fonts} from '../themes';
 
 const getStyleSheet = ({}) => {
   return StyleSheet.create({
+    background: {
+      backgroundColor: Colors.black,
+    },
     video: {
       zIndex: 0,
       transform: [{scale: 1}],
