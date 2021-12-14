@@ -12,6 +12,8 @@ import {encoder} from './utils';
 
 const {width} = Dimensions.get('screen');
 
+interface Video extends PhotoIdentifier {}
+
 const Videos = (props: any) => {
   const {title, count} = props.route.params;
   const folderOptions: GetPhotosParams = {
@@ -20,7 +22,7 @@ const Videos = (props: any) => {
     groupName: title,
   };
   const [isLoading, setLoading] = useState<boolean>(false);
-  const [videos, setVideos] = useState<Array<PhotoIdentifier>>([]);
+  const [videos, setVideos] = useState<Array<Video>>([]);
 
   useEffect(() => {
     loadFiles();
@@ -63,8 +65,8 @@ const Videos = (props: any) => {
         contentContainerStyle={styles.scrollViewContainer}
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={isLoading} onRefresh={loadFiles} />}>
-        {videos.map((video: PhotoIdentifier) => {
-          const {uri} = video.node.image;
+        {videos.map((video: Video) => {
+          const uri = video.node.image?.uri;
           return (
             <TouchableOpacity onPress={() => navigateTo(Routes.Player, {uri})} key={uri}>
               <View style={styles.folder}>

@@ -50,9 +50,9 @@ const AnimatedSlider = Animated.createAnimatedComponent(Slider);
 const WINDOW = Dimensions.get('window');
 
 const Player = (props: any) => {
-  const {uri} = props.route.params ?? {};
+  const fileUri = props.route.params?.uri;
   const contentUri = `content://${props.route.path}`;
-  const videoUri = encoder(uri ?? contentUri);
+  const videoUri = encoder(fileUri ?? contentUri);
   let modalProps: SelectionModalProps = {isVisible: false};
 
   const videoRef: React.Ref<Video> = useRef(null);
@@ -72,6 +72,7 @@ const Player = (props: any) => {
   const watchTime = useSharedValue(0);
   const totalTime = useSharedValue(0);
 
+  const [uri, setUri] = useState<string>(videoUri);
   const [isZoom, setZoom] = useState(false);
   const [swipe, setSwipe] = useState<Swipe>();
   const [isPaused, setPaused] = useState(false);
@@ -231,6 +232,7 @@ const Player = (props: any) => {
   const onSlidingEnd = () => setTimeout(() => setPaused(false), 50);
 
   const onError = () => {
+    if (uri !== encoder(uri)) return setUri(encoder(uri));
     const goBack = () => props.navigation.goBack();
     Alert.alert(
       '',
@@ -356,13 +358,13 @@ const Player = (props: any) => {
         <GestureDetector gesture={gestures}>
           <View style={[styles.overlay]}>
             <AnimatedVideo
+              source={{uri}}
               ref={videoRef}
               onLoad={setInfo}
               paused={isPaused}
               onError={onError}
               useTextureView={false}
               resizeMode={'contain'}
-              source={{uri: videoUri}}
               fullscreen={!isControls}
               selectedTextTrack={textTrack}
               selectedAudioTrack={audioTrack}

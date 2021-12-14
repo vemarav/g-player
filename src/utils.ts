@@ -46,8 +46,4 @@ const showDialog = () => {
   return false;
 };
 
-export const encoder = (url: string) =>
-  url
-    .split('/')
-    .map((s: string) => (s.includes(':') ? s : encodeURIComponent(s)))
-    .join('/');
+export const encoder = (url: string) => url.replace(/#|\s/i, encodeURIComponent);
