@@ -1,10 +1,11 @@
-import React, {useEffect, useState} from 'react';
+import React from 'react';
 import {View, Modal, StyleSheet, Text, StatusBar, ScrollView} from 'react-native';
 
 import {TouchableWithoutFeedback, TouchableOpacity} from 'react-native';
 import CheckBox from '@react-native-community/checkbox';
 
-import Colors from './colors';
+import Colors from '../styles/themes/colors';
+import applyStyles from '../styles/components/selectionModal';
 
 interface Item {
   title?: string | number;
@@ -35,6 +36,7 @@ const SelectionModal = (props: SelectionModalProps) => {
     height = 300,
     selected = {},
   } = props;
+  const styles = applyStyles();
 
   const containerSize = {
     width: width * (width > height ? 0.4 : 0.8),
@@ -48,7 +50,7 @@ const SelectionModal = (props: SelectionModalProps) => {
           <CheckBox
             value={selected?.title === item?.title}
             onValueChange={() => onSelect(item)}
-            tintColors={{true: Colors.witeAlpha(80), false: Colors.witeAlpha(50)}}
+            tintColors={styles.checkbox}
           />
           <Text style={styles.title}>
             {`${item?.language ?? item?.title ?? item?.index ?? 'NONE'}`.toString().toUpperCase()}
@@ -83,37 +85,3 @@ const SelectionModal = (props: SelectionModalProps) => {
 };
 
 export default SelectionModal;
-
-const styles = StyleSheet.create({
-  container: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 16,
-    color: Colors.witeAlpha(90),
-    marginHorizontal: 10,
-  },
-  listContainer: {
-    backgroundColor: Colors.blackAlpha(90),
-    borderRadius: 8,
-  },
-  scrollContainer: {
-    paddingTop: 10,
-    padding: 20,
-  },
-  item: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginRight: 40,
-    padding: 5,
-  },
-  header: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: Colors.white,
-    marginHorizontal: 30,
-    marginTop: 20,
-  },
-});

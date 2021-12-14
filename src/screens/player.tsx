@@ -1,5 +1,5 @@
 import React, {useState, useEffect, useRef} from 'react';
-import {View, StyleSheet, StatusBar, ActivityIndicator, Alert} from 'react-native';
+import {View, StatusBar, ActivityIndicator, Alert} from 'react-native';
 import {TouchableOpacity, Dimensions, Text} from 'react-native';
 import Video from 'react-native-video';
 import {GestureHandlerRootView, GestureDetector, Gesture} from 'react-native-gesture-handler';
@@ -9,11 +9,12 @@ import {useSharedValue, useDerivedValue, useAnimatedStyle} from 'react-native-re
 import SystemSetting from 'react-native-system-setting';
 import Orientation from 'react-native-orientation-locker';
 
-import {encoder, getTime, getTimeInSeconds, getValue} from './utils';
-import ReText from './retext';
-import Colors from './colors';
-import Icons from '../assets/icons';
-import SelectionModal, {SelectionModalProps} from './selectionModal';
+import {encoder, getTime, getTimeInSeconds, getValue} from '../common/utils';
+import ReText from '../components/retext';
+import Colors from '../styles/themes/colors';
+import Icons from '../../assets/icons';
+import SelectionModal, {SelectionModalProps} from '../components/selectionModal';
+import applyStyles from '../styles/screens/player';
 
 interface Info {
   [key: string]: any;
@@ -50,10 +51,12 @@ const AnimatedSlider = Animated.createAnimatedComponent(Slider);
 const WINDOW = Dimensions.get('window');
 
 const Player = (props: any) => {
+  const timer = useRef<number>(0);
   const fileUri = props.route.params?.uri;
   const contentUri = `content://${props.route.path}`;
   const videoUri = encoder(fileUri ?? contentUri);
   let modalProps: SelectionModalProps = {isVisible: false};
+  const styles = applyStyles();
 
   const videoRef: React.Ref<Video> = useRef(null);
   const before = useSharedValue({
@@ -132,6 +135,12 @@ const Player = (props: any) => {
       ? Orientation.lockToLandscape()
       : Orientation.lockToPortrait();
   }, [videoOrientation]);
+
+  useEffect(() => {
+    if (modalType !== ModalType.NONE) {
+      setControls(false);
+    }
+  }, [modalType]);
 
   const toggleOrientation = () => {
     setVideoOrientation(
@@ -337,7 +346,7 @@ const Player = (props: any) => {
       case isLoading:
         return (
           <View style={styles.iconContainer}>
-            <ActivityIndicator size={styles.icon.width} color={Colors.white} />
+            <ActivityIndicator size={styles.icon.width} color={Colors.secondary} />
           </View>
         );
       case isPaused && isControls:
@@ -356,7 +365,7 @@ const Player = (props: any) => {
       <StatusBar hidden />
       <GestureHandlerRootView>
         <GestureDetector gesture={gestures}>
-          <View style={[styles.overlay]}>
+          <View>
             <AnimatedVideo
               source={{uri}}
               ref={videoRef}
@@ -380,11 +389,12 @@ const Player = (props: any) => {
             </View>
           </View>
         </GestureDetector>
+
         {isControls && !isLoading ? (
           <>
             <View style={[styles.trackIcons]}>
               <TouchableOpacity
-                style={styles.controlIcon}
+                style={[styles.controlIcon, styles.resetControlIcon]}
                 onPress={() => setModalType(ModalType.PLAYBACK_SPEED)}>
                 <Text style={[styles.controlIconSize, styles.controlText]}>
                   {selectedPlaybackSpeed.title}X
@@ -404,14 +414,15 @@ const Player = (props: any) => {
                 <Icons.ScreenRotation {...styles.controlIconSize} />
               </TouchableOpacity>
             </View>
+
             <View style={[styles.sliderContainer, bottom]}>
               <Text style={styles.timeText}>{watchTimeText}</Text>
               <AnimatedSlider
                 value={progress}
                 style={styles.slider}
-                thumbTintColor={Colors.white}
-                minimumTrackTintColor={Colors.white}
-                maximumTrackTintColor={Colors.white}
+                thumbTintColor={styles.thumbTintColor}
+                minimumTrackTintColor={styles.minimumTrackTintColor}
+                maximumTrackTintColor={styles.maximumTrackTintColor}
                 onSlidingStart={onSlidingStart}
                 onSlidingComplete={onSlidingEnd}
                 onValueChange={onSliding}
@@ -428,104 +439,3 @@ const Player = (props: any) => {
 };
 
 export default Player;
-
-const styles = StyleSheet.create({
-  video: {
-    zIndex: 0,
-    width: Dimensions.get('screen').width,
-    height: Dimensions.get('screen').height,
-    backgroundColor: Colors.black,
-    transform: [{scale: 1}],
-  },
-  overlay: {
-    backgroundColor: Colors.black,
-  },
-  sliderContainer: {
-    position: 'absolute',
-    bottom: 0,
-    width: '100%',
-    backgroundColor: Colors.blackAlpha(50),
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingBottom: 20,
-  },
-  slider: {
-    height: 40,
-    flex: 1,
-  },
-  iconHolder: {
-    position: 'absolute',
-    top: 0,
-    zIndex: 3,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  iconContainer: {
-    width: 200,
-    height: 100,
-    borderRadius: 10,
-    backgroundColor: Colors.blackAlpha(60),
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-  },
-  icon: {
-    width: 48,
-    height: 48,
-  },
-  text: {
-    fontSize: 48,
-    fontWeight: 'bold',
-    color: Colors.white,
-    marginLeft: 5,
-  },
-  displayText: {
-    width: 200,
-    marginLeft: 0,
-    textShadowColor: Colors.blackAlpha(60),
-    textShadowOffset: {width: 0, height: 0},
-    textShadowRadius: 5,
-  },
-  timeText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: Colors.white,
-    width: 60,
-    textAlign: 'center',
-  },
-  textWidth: {
-    width: 60,
-  },
-  seekText: {
-    backgroundColor: 'transparent',
-    marginLeft: 50,
-  },
-  trackIcons: {
-    position: 'absolute',
-    padding: 20,
-    width: '100%',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    flexDirection: 'row',
-  },
-  controlIcon: {
-    padding: 15,
-    backgroundColor: Colors.blackAlpha(50),
-    marginHorizontal: 10,
-    borderRadius: 5,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  controlIconSize: {
-    width: 28,
-    height: 28,
-  },
-  controlText: {
-    color: Colors.white,
-    fontSize: 24,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    textAlignVertical: 'center',
-  },
-});

@@ -5,22 +5,25 @@ import {Text, ScrollView, TouchableOpacity} from 'react-native';
 import CameraRoll, {GetPhotosParams, PhotoIdentifier} from '@react-native-community/cameraroll';
 import Image from 'react-native-fast-image';
 
-import Colors from './colors';
-import Icons from '../assets/icons';
-import Routes from './routes';
-import {encoder} from './utils';
+import Routes from '../navigation/routes';
+import {encoder} from '../common/utils';
+import Header from '../components/header';
+import applyStyles from '../styles/screens/videos';
 
-const {width} = Dimensions.get('screen');
+// const {width} = Dimensions.get('screen');
 
 interface Video extends PhotoIdentifier {}
 
 const Videos = (props: any) => {
   const {title, count} = props.route.params;
+  const styles = applyStyles();
   const folderOptions: GetPhotosParams = {
     first: count,
     assetType: 'Videos',
     groupName: title,
+    include: ['fileSize'],
   };
+
   const [isLoading, setLoading] = useState<boolean>(false);
   const [videos, setVideos] = useState<Array<Video>>([]);
 
@@ -49,16 +52,7 @@ const Videos = (props: any) => {
 
   return (
     <View style={styles.container}>
-      <StatusBar hidden={false} />
-
-      <View style={styles.border}>
-        <TouchableOpacity onPress={() => navigateTo(Routes.Folders)}>
-          <Icons.Back {...styles.back} />
-        </TouchableOpacity>
-        <Text style={styles.header} numberOfLines={1}>
-          {title}
-        </Text>
-      </View>
+      <Header title={title} isPop={true} />
 
       <ScrollView
         style={styles.scrollView}
@@ -84,67 +78,3 @@ const Videos = (props: any) => {
 };
 
 export default Videos;
-
-const styles = StyleSheet.create({
-  loader: {
-    flex: 1,
-    justifyContent: 'center',
-    backgroundColor: Colors.black,
-  },
-  container: {
-    flex: 1,
-    backgroundColor: Colors.black,
-  },
-  border: {
-    borderBottomWidth: 1,
-    borderColor: Colors.witeAlpha(85),
-    flexDirection: 'row',
-    paddingHorizontal: 30,
-    paddingVertical: 15,
-    alignItems: 'center',
-  },
-  back: {
-    width: 20,
-    height: 20,
-  },
-  header: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: Colors.white,
-    marginLeft: 10,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollViewContainer: {
-    paddingVertical: 10,
-  },
-  video: {
-    width: 96,
-    height: 64,
-    borderRadius: 5,
-    backgroundColor: Colors.witeAlpha(5),
-  },
-  folder: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 30,
-    paddingVertical: 10,
-  },
-  textContainer: {
-    paddingHorizontal: 15,
-    marginRight: 30,
-  },
-  title: {
-    color: Colors.witeAlpha(80),
-    fontSize: 14,
-    fontWeight: 'bold',
-    width: width - 75 - 96,
-  },
-  res: {
-    marginTop: 5,
-    color: Colors.witeAlpha(50),
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-});
