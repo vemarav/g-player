@@ -1,6 +1,9 @@
 import React from 'react';
 import {NavigationContainer} from '@react-navigation/native';
-import {createStackNavigator, StackNavigationOptions} from '@react-navigation/stack';
+import {
+  createNativeStackNavigator,
+  NativeStackNavigationOptions,
+} from '@react-navigation/native-stack';
 
 import Videos from './screens/videos';
 import Player from './screens/player';
@@ -8,14 +11,13 @@ import Folder from './screens/folders';
 import Routes from './navigation/routes';
 import linking from './navigation/linking';
 import {hasPermissionAndroid} from './common/utils';
-import {HorizontalInterpolator} from './styles/navigation/interpolators';
 
-const stackOptions: StackNavigationOptions = {
+const stackOptions: NativeStackNavigationOptions = {
   headerShown: false,
-  cardStyleInterpolator: HorizontalInterpolator,
+  animation: 'slide_from_right',
 };
 
-const Stack = createStackNavigator();
+const Stack = createNativeStackNavigator();
 
 const Navigation = () => {
   React.useEffect(() => {
