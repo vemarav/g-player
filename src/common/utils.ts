@@ -1,9 +1,5 @@
 import {Alert, BackHandler, Linking, PermissionsAndroid} from 'react-native';
 
-export const getValue = (animated: any) => {
-  return animated.value ?? animated._value;
-};
-
 export const getTime = (seconds: number): string => {
   const _seconds = `${Math.floor(seconds) % 60}`.padStart(2, '0');
   const _minutes = `${Math.floor(seconds / 60) % 60}`.padStart(2, '0');

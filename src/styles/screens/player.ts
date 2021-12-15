@@ -44,6 +44,7 @@ const getStyleSheet = ({}) => {
     icon: {
       width: 48,
       height: 48,
+      color: Colors.white,
     },
     text: {
       marginTop: 15,

@@ -1,5 +1,5 @@
 import React, {useState, useEffect, useRef} from 'react';
-import {View, StatusBar, ActivityIndicator, Alert} from 'react-native';
+import {View, StatusBar, ActivityIndicator, Alert, BackHandler} from 'react-native';
 import {TouchableOpacity, Dimensions, Text} from 'react-native';
 import Video from 'react-native-video';
 import {GestureHandlerRootView, GestureDetector, Gesture} from 'react-native-gesture-handler';
@@ -9,9 +9,8 @@ import {useSharedValue, useDerivedValue, useAnimatedStyle} from 'react-native-re
 import SystemSetting from 'react-native-system-setting';
 import Orientation from 'react-native-orientation-locker';
 
-import {encoder, getTime, getTimeInSeconds, getValue} from '../common/utils';
+import {encoder, getTime, getTimeInSeconds} from '../common/utils';
 import ReText from '../components/retext';
-import Colors from '../styles/themes/colors';
 import Icons from '../../assets/icons';
 import SelectionModal, {SelectionModalProps} from '../components/selectionModal';
 import applyStyles from '../styles/screens/player';
@@ -54,7 +53,6 @@ const MAX_ZOOM = 6;
 const MIN_ZOOM = 0.3;
 
 const Player = (props: any) => {
-  const timer = useRef<number>(0);
   const fileUri = props.route.params?.uri;
   const contentUri = `content://${props.route.path}`;
   const videoUri = encoder(fileUri ?? contentUri);
@@ -62,22 +60,24 @@ const Player = (props: any) => {
   const styles = applyStyles();
 
   const videoRef: React.Ref<Video> = useRef(null);
-  const before = useSharedValue({
-    scale: 1,
-    volume: 0,
-    brightness: 0,
-    translate: {x: 0, y: 0},
-    transition: {x: 0, y: 0, updated: false},
-  });
+
+  // previous values, stores where user left the gesture
+  const pScale = useSharedValue(1);
+  const pVolume = useSharedValue(0);
+  const pBrightness = useSharedValue(0);
+  const pTranslate = useSharedValue({x: 0, y: 0}); // used in pan tracking
+  const pTransition = useSharedValue({x: 0, y: 0});
+  const pFocals = useSharedValue({x: 0, y: 0, updated: false});
+
+  // active values used in animations
   const scale = useSharedValue(1);
   const volume = useSharedValue(0);
   const watchTime = useSharedValue(0);
   const totalTime = useSharedValue(0);
   const brightness = useSharedValue(0);
-  const progress: Animated.Value<number> = useValue(0);
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
-  const pTransition = useSharedValue({x: 0, y: 0});
+  const progress: Animated.Value<number> = useValue(0);
   const zoomText = useDerivedValue(() => `${Math.round(scale.value * 100)}%`);
   const volumeText = useDerivedValue(() => `${Math.round(volume.value * 30)}`);
   const brightnessText = useDerivedValue(() => `${Math.round(brightness.value * 30)}`);
@@ -186,43 +186,42 @@ const Player = (props: any) => {
     .onStart(() => setPaused(!isPaused));
 
   const pan = Gesture.Pan()
-    .activeOffsetX([0, 20])
-    .activeOffsetY([0, 20])
     .maxPointers(1)
     .onBegin(({x, y}) => {
       setSwipe(undefined);
       setIsVolume(false);
       setIsBrightness(false);
-      before.value.translate = {x, y};
-      before.value.volume = volume.value;
-      before.value.brightness = brightness.value;
+      pTranslate.value.x = x;
+      pTranslate.value.y = y;
+      pVolume.value = volume.value;
+      pBrightness.value = brightness.value;
     })
     .onUpdate(({x, y}) => {
       switch (swipe) {
         case Swipe.HORIZONTAL: {
-          const dx = x - before.value.translate.x;
+          const dx = x - pTranslate.value.x;
           const change = watchTime.value + dx / 5;
           const seek = change < 0 ? 0 : change > totalTime.value ? totalTime.value : change;
           setWatchTimeText(getTime(seek));
           seekTo(seek);
         }
         case Swipe.VERTICAL: {
-          const dy = before.value.translate.y - y - 30;
+          const dy = pTranslate.value.y - y - 30;
           const change = Number((dy / dimensions.height).toPrecision(2));
           if (isVolume) {
-            const _volume = before.value.volume + change;
+            const _volume = pVolume.value + change;
             volume.value = _volume > 1 ? 1 : _volume < 0 ? 0 : _volume;
             SystemSetting.setVolume(volume.value);
           } else if (isBrightness) {
-            const _brightness = before.value.brightness + change;
+            const _brightness = pBrightness.value + change;
             brightness.value = _brightness > 1 ? 1 : _brightness < 0 ? 0 : _brightness;
             SystemSetting.setAppBrightness(brightness.value);
           }
           break;
         }
         default: {
-          const dx = Math.abs(before.value.translate.x - x);
-          const dy = Math.abs(before.value.translate.y - y);
+          const dx = Math.abs(pTranslate.value.x - x);
+          const dy = Math.abs(pTranslate.value.y - y);
           if (dx > 30 && dy < 30) setSwipe(Swipe.HORIZONTAL);
           if (dy > 30 && dx < 30) {
             setSwipe(Swipe.VERTICAL);
@@ -241,25 +240,24 @@ const Player = (props: any) => {
 
   const pinch = Gesture.Pinch()
     .onBegin(() => {
-      before.value = {
-        ...before.value,
-        scale: getValue(scale),
-        transition: {...before.value.transition, updated: false},
-      };
+      pScale.value = scale.value;
+      pFocals.value.updated = false;
       pTransition.value = {x: translateX.value, y: translateY.value};
     })
     .onUpdate(event => {
-      if (before.value.transition.updated && isPaused) {
-        translateX.value = pTransition.value.x + (event.focalX - before.value.transition.x);
-        translateY.value = pTransition.value.y + (event.focalY - before.value.transition.y);
-      } else {
-        before.value = {
-          ...before.value,
-          transition: {x: event.focalX, y: event.focalY, updated: true},
-        };
+      if (isPaused) {
+        if (pFocals.value.updated) {
+          translateX.value = pTransition.value.x + (event.focalX - pFocals.value.x);
+          translateY.value = pTransition.value.y + (event.focalY - pFocals.value.y);
+        } else {
+          pFocals.value.x = event.focalX;
+          pFocals.value.y = event.focalY;
+          pFocals.value.updated = true;
+        }
       }
+
       if (!isZoom) setIsZoom(true);
-      const _scale = before.value.scale + event.scale - 1;
+      const _scale = pScale.value + event.scale - 1;
       if (_scale > MAX_ZOOM) scale.value = 6;
       else if (_scale < MIN_ZOOM) scale.value = 0.5;
       else scale.value = _scale;
@@ -295,7 +293,15 @@ const Player = (props: any) => {
     );
   };
 
-  const gestures = Gesture.Race(doubleTap, pan, pinch, tap);
+  const onVideoEnd = () => {
+    if (props.navigation.canGoBack()) {
+      props.navigation.goBack();
+    } else {
+      BackHandler.exitApp();
+    }
+  };
+
+  const gestures = Gesture.Exclusive(pan, pinch, doubleTap, tap);
   const size = {width: dimensions.width, height: dimensions.height};
   const bottomHeight = Math.max(size.height, size.width) - Math.max(WINDOW.height, WINDOW.width);
   const bottom =
@@ -380,7 +386,7 @@ const Player = (props: any) => {
       case isLoading:
         return (
           <View style={styles.iconContainer}>
-            <ActivityIndicator size={styles.icon.width} color={Colors.secondary} />
+            <ActivityIndicator size={styles.icon.width} color={styles.icon.color} />
           </View>
         );
       case isPaused && isControls:
@@ -400,73 +406,72 @@ const Player = (props: any) => {
       <GestureHandlerRootView>
         <GestureDetector gesture={gestures}>
           <View style={styles.background}>
+            <View style={[styles.iconHolder, size]}>
+              <Status />
+            </View>
             <AnimatedVideo
               source={{uri}}
               ref={videoRef}
               onLoad={setInfo}
               paused={isPaused}
               onError={onError}
+              onEnd={onVideoEnd}
               useTextureView={false}
               resizeMode={'contain'}
               fullscreen={!isControls}
               selectedTextTrack={textTrack}
               selectedAudioTrack={audioTrack}
-              onEnd={props.navigation.goBack}
               onProgress={updateSliderProgress}
               progressUpdateInterval={500}
               rate={selectedPlaybackSpeed.title}
               onReadyForDisplay={() => setLoading(false)}
               style={[styles.video, size, videoStyles]}
             />
-            <View style={[styles.iconHolder, size]}>
-              <Status />
-            </View>
           </View>
         </GestureDetector>
-
-        {isControls && !isLoading ? (
-          <>
-            <View style={[styles.trackIcons]}>
-              <TouchableOpacity
-                style={[styles.controlIcon, styles.resetControlIcon]}
-                onPress={() => setModalType(ModalType.PLAYBACK_SPEED)}>
-                <Text style={[styles.controlIconSize, styles.controlText]}>
-                  {selectedPlaybackSpeed.title}X
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.controlIcon}
-                onPress={() => setModalType(ModalType.SUBTITLE)}>
-                <Icons.Subtitles {...styles.controlIconSize} />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.controlIcon}
-                onPress={() => setModalType(ModalType.AUDIO)}>
-                <Icons.Audio {...styles.controlIconSize} />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.controlIcon} onPress={toggleOrientation}>
-                <Icons.ScreenRotation {...styles.controlIconSize} />
-              </TouchableOpacity>
-            </View>
-
-            <View style={[styles.sliderContainer, bottom]}>
-              <Text style={styles.timeText}>{watchTimeText}</Text>
-              <AnimatedSlider
-                value={progress}
-                style={styles.slider}
-                thumbTintColor={styles.thumbTintColor}
-                minimumTrackTintColor={styles.minimumTrackTintColor}
-                maximumTrackTintColor={styles.maximumTrackTintColor}
-                onSlidingStart={onSlidingStart}
-                onSlidingComplete={onSlidingEnd}
-                onValueChange={onSliding}
-              />
-              <Text style={styles.timeText}>{getTime(totalTime.value)}</Text>
-            </View>
-          </>
-        ) : null}
       </GestureHandlerRootView>
 
+      {isControls && !isLoading ? (
+        <>
+          <View style={[styles.trackIcons]}>
+            <TouchableOpacity
+              style={[styles.controlIcon, styles.resetControlIcon]}
+              onPress={() => setModalType(ModalType.PLAYBACK_SPEED)}>
+              <Text style={[styles.controlIconSize, styles.controlText]}>
+                {selectedPlaybackSpeed.title}X
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.controlIcon}
+              onPress={() => setModalType(ModalType.SUBTITLE)}>
+              <Icons.Subtitles {...styles.controlIconSize} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.controlIcon}
+              onPress={() => setModalType(ModalType.AUDIO)}>
+              <Icons.Audio {...styles.controlIconSize} />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.controlIcon} onPress={toggleOrientation}>
+              <Icons.ScreenRotation {...styles.controlIconSize} />
+            </TouchableOpacity>
+          </View>
+
+          <View style={[styles.sliderContainer, bottom]}>
+            <Text style={styles.timeText}>{watchTimeText}</Text>
+            <AnimatedSlider
+              value={progress}
+              style={styles.slider}
+              thumbTintColor={styles.thumbTintColor}
+              minimumTrackTintColor={styles.minimumTrackTintColor}
+              maximumTrackTintColor={styles.maximumTrackTintColor}
+              onSlidingStart={onSlidingStart}
+              onSlidingComplete={onSlidingEnd}
+              onValueChange={onSliding}
+            />
+            <Text style={styles.timeText}>{getTime(totalTime.value)}</Text>
+          </View>
+        </>
+      ) : null}
       <SelectionModal {...modalProps} onCancel={() => setModalType(ModalType.NONE)} />
     </>
   );
