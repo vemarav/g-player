@@ -15,9 +15,9 @@ const Fonts = {
   },
   family: {
     light: 'Poppins-Light',
-    regular: 'Poppins-Medium',
-    semiBold: 'Poppins-SemiBold',
-    bold: 'Poppins-Bold',
+    regular: 'Poppins-Regular',
+    semiBold: 'Poppins-Medium',
+    bold: 'Poppins-SemiBold',
   },
 };
 

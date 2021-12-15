@@ -4,7 +4,7 @@ import {TouchableOpacity, Dimensions, Text} from 'react-native';
 import Video from 'react-native-video';
 import {GestureHandlerRootView, GestureDetector, Gesture} from 'react-native-gesture-handler';
 import Slider from '@react-native-community/slider';
-import Animated, {call, useCode, useValue} from 'react-native-reanimated';
+import Animated, {call, useCode, useValue, withTiming} from 'react-native-reanimated';
 import {useSharedValue, useDerivedValue, useAnimatedStyle} from 'react-native-reanimated';
 import SystemSetting from 'react-native-system-setting';
 import Orientation from 'react-native-orientation-locker';
@@ -50,6 +50,9 @@ const AnimatedVideo = Animated.createAnimatedComponent(Video);
 const AnimatedSlider = Animated.createAnimatedComponent(Slider);
 const WINDOW = Dimensions.get('window');
 
+const MAX_ZOOM = 6;
+const MIN_ZOOM = 0.3;
+
 const Player = (props: any) => {
   const timer = useRef<number>(0);
   const fileUri = props.route.params?.uri;
@@ -61,22 +64,27 @@ const Player = (props: any) => {
   const videoRef: React.Ref<Video> = useRef(null);
   const before = useSharedValue({
     scale: 1,
-    translate: {x: 0, y: 0},
     volume: 0,
     brightness: 0,
+    translate: {x: 0, y: 0},
+    transition: {x: 0, y: 0, updated: false},
   });
   const scale = useSharedValue(1);
-  const zoomText = useDerivedValue(() => `${Math.round(scale.value * 100)}%`);
   const volume = useSharedValue(0);
-  const volumeText = useDerivedValue(() => `${Math.round(volume.value * 30)}`);
-  const brightness = useSharedValue(0);
-  const brightnessText = useDerivedValue(() => `${Math.round(brightness.value * 30)}`);
-  const progress: Animated.Value<number> = useValue(0);
   const watchTime = useSharedValue(0);
   const totalTime = useSharedValue(0);
+  const brightness = useSharedValue(0);
+  const progress: Animated.Value<number> = useValue(0);
+  const translateX = useSharedValue(0);
+  const translateY = useSharedValue(0);
+  const pTransition = useSharedValue({x: 0, y: 0});
+  const zoomText = useDerivedValue(() => `${Math.round(scale.value * 100)}%`);
+  const volumeText = useDerivedValue(() => `${Math.round(volume.value * 30)}`);
+  const brightnessText = useDerivedValue(() => `${Math.round(brightness.value * 30)}`);
 
   const [uri, setUri] = useState<string>(videoUri);
-  const [isZoom, setZoom] = useState(false);
+  const [isZoom, setIsZoom] = useState(false);
+  const [zoom, setZoom] = useState(1);
   const [swipe, setSwipe] = useState<Swipe>();
   const [isPaused, setPaused] = useState(false);
   const [isVolume, setIsVolume] = useState(false);
@@ -96,7 +104,13 @@ const Player = (props: any) => {
   // modals
   const [modalType, setModalType] = useState<ModalType>(ModalType.NONE);
 
-  const videoStyles = useAnimatedStyle(() => ({transform: [{scale: scale.value}]}));
+  const videoStyles = useAnimatedStyle(() => ({
+    transform: [
+      {scale: scale.value},
+      {translateX: translateX.value},
+      {translateY: translateY.value},
+    ],
+  }));
 
   useCode(() => {
     return call([progress], (progress: any) => {
@@ -138,9 +152,18 @@ const Player = (props: any) => {
 
   useEffect(() => {
     if (modalType !== ModalType.NONE) {
-      setControls(false);
     }
   }, [modalType]);
+
+  useEffect(() => {
+    if (!isPaused) {
+      translateX.value = withTiming(0, {duration: 250});
+      translateY.value = withTiming(0, {duration: 250});
+      scale.value = withTiming(zoom, {duration: 250});
+    } else {
+      setZoom(scale.value);
+    }
+  }, [isPaused]);
 
   const toggleOrientation = () => {
     setVideoOrientation(
@@ -217,15 +240,31 @@ const Player = (props: any) => {
     });
 
   const pinch = Gesture.Pinch()
-    .onBegin(() => (before.value.scale = getValue(scale)))
+    .onBegin(() => {
+      before.value = {
+        ...before.value,
+        scale: getValue(scale),
+        transition: {...before.value.transition, updated: false},
+      };
+      pTransition.value = {x: translateX.value, y: translateY.value};
+    })
     .onUpdate(event => {
-      if (!isZoom) setZoom(true);
+      if (before.value.transition.updated && isPaused) {
+        translateX.value = pTransition.value.x + (event.focalX - before.value.transition.x);
+        translateY.value = pTransition.value.y + (event.focalY - before.value.transition.y);
+      } else {
+        before.value = {
+          ...before.value,
+          transition: {x: event.focalX, y: event.focalY, updated: true},
+        };
+      }
+      if (!isZoom) setIsZoom(true);
       const _scale = before.value.scale + event.scale - 1;
-      if (_scale > 1.5) scale.value = 1.5;
-      else if (_scale < 0.5) scale.value = 0.5;
+      if (_scale > MAX_ZOOM) scale.value = 6;
+      else if (_scale < MIN_ZOOM) scale.value = 0.5;
       else scale.value = _scale;
     })
-    .onEnd(() => setZoom(false));
+    .onEnd(() => setIsZoom(false));
 
   const updateSliderProgress = ({currentTime}: {currentTime: number}) => {
     const played = currentTime / totalTime.value;
@@ -256,7 +295,7 @@ const Player = (props: any) => {
     );
   };
 
-  const gestures = Gesture.Exclusive(doubleTap, tap, pan, pinch);
+  const gestures = Gesture.Race(doubleTap, pan, pinch, tap);
   const size = {width: dimensions.width, height: dimensions.height};
   const bottomHeight = Math.max(size.height, size.width) - Math.max(WINDOW.height, WINDOW.width);
   const bottom =
@@ -314,19 +353,14 @@ const Player = (props: any) => {
     switch (true) {
       case swipe === Swipe.HORIZONTAL:
         return (
-          <View
-            style={[
-              styles.iconContainer,
-              styles.seekText,
-              {marginLeft: watchTimeText.length > 5 ? 50 : 100},
-            ]}>
+          <View style={[styles.iconContainer, styles.seekText]}>
             <Text style={[styles.text, styles.displayText]}>{watchTimeText}</Text>
           </View>
         );
       case isZoom:
         return (
-          <View style={styles.iconContainer}>
-            <ReText text={zoomText} style={styles.text} />
+          <View style={[styles.iconContainer, styles.seekText]}>
+            <ReText text={zoomText} style={[styles.text, styles.displayText]} />
           </View>
         );
       case isVolume:

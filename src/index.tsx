@@ -1,9 +1,6 @@
 import React, {useState} from 'react';
-import {DarkTheme, DefaultTheme, NavigationContainer} from '@react-navigation/native';
-import {
-  createNativeStackNavigator,
-  NativeStackNavigationOptions,
-} from '@react-navigation/native-stack';
+import {NavigationContainer} from '@react-navigation/native';
+import {createStackNavigator, StackNavigationOptions} from '@react-navigation/stack';
 
 import Videos from './screens/videos';
 import Player from './screens/player';
@@ -13,24 +10,30 @@ import linking from './navigation/linking';
 import {hasPermissionAndroid} from './common/utils';
 import {AppState, AppStateStatus} from 'react-native';
 
-const config = {
-  animation: 'timing',
-  config: {duration: 3000},
-};
+import {HorizontalInterpolator} from './styles/navigation/interpolators';
+import {Colors} from './styles/themes';
 
-const transitionSpec = {
-  transitionSpec: {
-    open: config,
-    close: config,
-  },
-};
-
-const stackOptions: NativeStackNavigationOptions = {
+const stackOptions: StackNavigationOptions = {
   headerShown: false,
-  animation: 'slide_from_right',
-  ...transitionSpec,
+  transitionSpec: {
+    open: {
+      animation: 'timing',
+      config: {
+        duration: 300,
+      },
+    },
+    close: {
+      animation: 'timing',
+      config: {
+        duration: 300,
+      },
+    },
+  },
+  cardStyle: {backgroundColor: Colors.primary},
+  cardStyleInterpolator: HorizontalInterpolator,
 };
-const Stack = createNativeStackNavigator();
+
+const Stack = createStackNavigator();
 
 const Navigation = () => {
   const [state, setState] = useState<AppStateStatus>(AppState.currentState);

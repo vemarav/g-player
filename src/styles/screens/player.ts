@@ -46,11 +46,12 @@ const getStyleSheet = ({}) => {
       height: 48,
     },
     text: {
+      marginTop: 15,
       marginLeft: 5,
       color: Colors.white,
       letterSpacing: -2,
       fontSize: Fonts.size.s48,
-      fontFamily: Fonts.family.semiBold,
+      fontFamily: Fonts.family.regular,
     },
     displayText: {
       width: 200,
@@ -70,7 +71,7 @@ const getStyleSheet = ({}) => {
       width: 60,
     },
     seekText: {
-      marginLeft: 50,
+      marginLeft: 90,
       backgroundColor: 'transparent',
     },
     trackIcons: {
