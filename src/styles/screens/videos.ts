@@ -1,13 +1,13 @@
 import {Dimensions, StyleSheet} from 'react-native';
-import {Colors, Fonts} from '../themes';
+import useTheme, {Theme} from '../themes';
 
 const {width} = Dimensions.get('screen');
 
-const getStyleSheet = ({}) => {
+const getStyleSheet = ({colors, fonts}: Theme) => {
   return StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: Colors.primary,
+      backgroundColor: colors.primary,
     },
     scrollView: {
       flex: 1,
@@ -19,7 +19,7 @@ const getStyleSheet = ({}) => {
       width: 96,
       height: 64,
       borderRadius: 5,
-      backgroundColor: Colors.secondaryAlpha(5),
+      backgroundColor: colors.secondaryAlpha(5),
     },
     folder: {
       paddingVertical: 10,
@@ -34,13 +34,13 @@ const getStyleSheet = ({}) => {
     title: {
       letterSpacing: -0.5,
       width: width - 75 - 96,
-      fontSize: Fonts.size.s15,
-      fontFamily: Fonts.family.regular,
-      color: Colors.secondaryAlpha(70),
+      fontSize: fonts.size.s15,
+      fontFamily: fonts.family.regular,
+      color: colors.secondaryAlpha(70),
     },
     res: {
       marginTop: 5,
-      color: Colors.secondaryAlpha(50),
+      color: colors.secondaryAlpha(50),
       fontSize: 12,
       fontWeight: 'bold',
     },
@@ -48,6 +48,8 @@ const getStyleSheet = ({}) => {
 };
 
 export default (props?: any) => {
-  const styles = getStyleSheet({...props});
+  const theme = useTheme();
+  const styles = getStyleSheet({...props, ...theme});
+
   return styles;
 };

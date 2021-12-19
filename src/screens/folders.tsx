@@ -1,16 +1,15 @@
 import React, {useEffect, useState} from 'react';
-import {StatusBar, View, AppStateStatus} from 'react-native';
+import {View, AppStateStatus} from 'react-native';
 import {Text, ScrollView, TouchableOpacity, RefreshControl, AppState} from 'react-native';
 import CameraRoll, {Album, GetAlbumsParams} from '@react-native-community/cameraroll';
 
 import Icons from '../../assets/icons';
-import {Colors} from '../styles/themes';
-import Routes from '../navigation/routes';
-import applyStyles from '../styles/screens/folders';
+import useStyles from '../styles/screens/folders';
 import Header from '../components/header';
+import {Routes, ScreenProps} from '../navigation';
 
-const Folders = (props: any) => {
-  const styles = applyStyles();
+const Folders = (props: ScreenProps<any>) => {
+  const styles = useStyles();
   const folderOptions: GetAlbumsParams = {assetType: 'Videos'};
 
   const [isLoading, setLoading] = useState<boolean>(true);

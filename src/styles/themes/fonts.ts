@@ -1,4 +1,4 @@
-const Fonts = {
+const fonts = {
   size: {
     s48: 48,
     s28: 28,
@@ -21,4 +21,5 @@ const Fonts = {
   },
 };
 
-export default Fonts;
+export type {fonts as Fonts};
+export default fonts;

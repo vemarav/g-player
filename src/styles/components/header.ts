@@ -1,7 +1,7 @@
 import {StyleSheet} from 'react-native';
-import {Colors, Fonts} from '../themes';
+import useTheme, {Theme} from '../themes';
 
-const getStyleSheet = ({}) => {
+const getStyleSheet = ({colors, fonts}: Theme) => {
   return StyleSheet.create({
     border: {
       paddingVertical: 5,
@@ -9,24 +9,26 @@ const getStyleSheet = ({}) => {
       alignItems: 'center',
       flexDirection: 'row',
       paddingHorizontal: 25,
-      borderColor: Colors.secondaryAlpha(80),
+      borderColor: colors.secondaryAlpha(80),
     },
     header: {
       marginTop: 3,
       marginHorizontal: 10,
-      fontSize: Fonts.size.s24,
-      color: Colors.secondaryAlpha(80),
-      fontFamily: Fonts.family.semiBold,
+      fontSize: fonts.size.s22,
+      color: colors.secondaryAlpha(80),
+      fontFamily: fonts.family.regular,
     },
     backIcon: {
       width: 22,
       height: 22,
-      color: Colors.secondaryAlpha(80),
+      color: colors.secondaryAlpha(80),
     },
   });
 };
 
 export default (props?: any) => {
-  const styles = getStyleSheet({...props});
-  return {...styles, barColor: Colors.primary, barStyle: Colors.barStyle};
+  const theme = useTheme();
+  const styles = getStyleSheet({...props, ...theme});
+
+  return {...styles, barColor: theme.colors.primary, barStyle: theme.colors.barStyle};
 };

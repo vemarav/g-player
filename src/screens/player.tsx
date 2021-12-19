@@ -9,11 +9,13 @@ import {useSharedValue, useDerivedValue, useAnimatedStyle} from 'react-native-re
 import SystemSetting from 'react-native-system-setting';
 import Orientation from 'react-native-orientation-locker';
 
-import {encoder, getTime, getTimeInSeconds} from '../common/utils';
-import ReText from '../components/retext';
 import Icons from '../../assets/icons';
+import ReText from '../components/retext';
+import useStyles from '../styles/screens/player';
+import {PLAYBACK_SPEEDS} from '../common/constants';
+import {encoder, getTime, getTimeInSeconds} from '../common/utils';
 import SelectionModal, {SelectionModalProps} from '../components/selectionModal';
-import applyStyles from '../styles/screens/player';
+import {ScreenProps} from '../navigation';
 
 interface Info {
   [key: string]: any;
@@ -52,12 +54,12 @@ const WINDOW = Dimensions.get('window');
 const MAX_ZOOM = 6;
 const MIN_ZOOM = 0.3;
 
-const Player = (props: any) => {
+const Player = (props: ScreenProps<any>) => {
   const fileUri = props.route.params?.uri;
   const contentUri = `content://${props.route.path}`;
   const videoUri = encoder(fileUri ?? contentUri);
   let modalProps: SelectionModalProps = {isVisible: false};
-  const styles = applyStyles();
+  const styles = useStyles();
 
   const videoRef: React.Ref<Video> = useRef(null);
 
@@ -79,16 +81,16 @@ const Player = (props: any) => {
   const translateY = useSharedValue(0);
   const progress: Animated.Value<number> = useValue(0);
   const zoomText = useDerivedValue(() => `${Math.round(scale.value * 100)}%`);
-  const volumeText = useDerivedValue(() => `${Math.round(volume.value * 30)}`);
-  const brightnessText = useDerivedValue(() => `${Math.round(brightness.value * 30)}`);
+  const volumeText = useDerivedValue(() => `${Math.round(volume.value * 50)}`);
+  const brightnessText = useDerivedValue(() => `${Math.round(brightness.value * 50)}`);
 
-  const [uri, setUri] = useState<string>(videoUri);
-  const [isZoom, setIsZoom] = useState(false);
   const [zoom, setZoom] = useState(1);
   const [swipe, setSwipe] = useState<Swipe>();
+  const [isZoom, setIsZoom] = useState(false);
   const [isPaused, setPaused] = useState(false);
   const [isVolume, setIsVolume] = useState(false);
   const [isLoading, setLoading] = useState(true);
+  const [uri, setUri] = useState<string>(videoUri);
   const [isControls, setControls] = useState(false);
   const [info, setInfo] = useState<Info>({duration: 0});
   const [isBrightness, setIsBrightness] = useState(false);
@@ -200,7 +202,7 @@ const Player = (props: any) => {
       switch (swipe) {
         case Swipe.HORIZONTAL: {
           const dx = x - pTranslate.value.x;
-          const change = watchTime.value + dx / 5;
+          const change = watchTime.value + dx / 10;
           const seek = change < 0 ? 0 : change > totalTime.value ? totalTime.value : change;
           setWatchTimeText(getTime(seek));
           seekTo(seek);
@@ -312,35 +314,35 @@ const Player = (props: any) => {
   switch (modalType) {
     case ModalType.SUBTITLE:
       modalProps = {
-        title: 'Subtitle',
-        selected: selectedTextTrack,
-        data: info.textTracks,
         isVisible: true,
+        title: 'Subtitle',
+        data: info.textTracks,
         width: dimensions.width,
         height: dimensions.height,
+        selected: selectedTextTrack,
         onSelect: setSelectedTextTrack,
       };
       break;
     case ModalType.AUDIO:
       modalProps = {
         title: 'Audio',
-        selected: selectedAudioTrack,
-        data: info.audioTracks,
         isVisible: true,
+        data: info.audioTracks,
         width: dimensions.width,
         height: dimensions.height,
+        selected: selectedAudioTrack,
         onSelect: setSelectedAudioTrack,
       };
       break;
     case ModalType.PLAYBACK_SPEED:
       modalProps = {
-        title: 'Playback Speed',
-        selected: selectedPlaybackSpeed,
-        data: [{title: 0.5}, {title: 0.75}, {title: 1}, {title: 1.5}, {title: 1.75}, {title: 2}],
         isVisible: true,
+        data: PLAYBACK_SPEEDS,
+        title: 'Playback Speed',
         width: dimensions.width,
         height: dimensions.height,
         onSelect: setPlaybackSpeed,
+        selected: selectedPlaybackSpeed,
       };
       break;
     default:
@@ -413,19 +415,19 @@ const Player = (props: any) => {
               source={{uri}}
               ref={videoRef}
               onLoad={setInfo}
-              paused={isPaused}
               onError={onError}
               onEnd={onVideoEnd}
               useTextureView={false}
               resizeMode={'contain'}
               fullscreen={!isControls}
+              progressUpdateInterval={500}
               selectedTextTrack={textTrack}
               selectedAudioTrack={audioTrack}
               onProgress={updateSliderProgress}
-              progressUpdateInterval={500}
               rate={selectedPlaybackSpeed.title}
-              onReadyForDisplay={() => setLoading(false)}
               style={[styles.video, size, videoStyles]}
+              onReadyForDisplay={() => setLoading(false)}
+              paused={swipe === Swipe.HORIZONTAL || isPaused}
             />
           </View>
         </GestureDetector>

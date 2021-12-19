@@ -1,22 +1,32 @@
 import React, {useEffect, useState} from 'react';
-import {StatusBar, View, StyleSheet, Dimensions} from 'react-native';
+import {View} from 'react-native';
 import {RefreshControl, AppState} from 'react-native';
 import {Text, ScrollView, TouchableOpacity} from 'react-native';
 import CameraRoll, {GetPhotosParams, PhotoIdentifier} from '@react-native-community/cameraroll';
 import Image from 'react-native-fast-image';
 
-import Routes from '../navigation/routes';
 import {encoder} from '../common/utils';
 import Header from '../components/header';
-import applyStyles from '../styles/screens/videos';
-
-// const {width} = Dimensions.get('screen');
+import useStyles from '../styles/screens/videos';
+import {Routes} from '../navigation';
 
 interface Video extends PhotoIdentifier {}
 
-const Videos = (props: any) => {
+interface Props {
+  navigation: {
+    navigate: (f: string, p: {}) => void;
+  };
+  route: {
+    params: {
+      title: string;
+      count: number;
+    };
+  };
+}
+
+const Videos = (props: Props) => {
   const {title, count} = props.route.params;
-  const styles = applyStyles();
+  const styles = useStyles();
   const folderOptions: GetPhotosParams = {
     first: count,
     assetType: 'Videos',

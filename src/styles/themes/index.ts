@@ -1,4 +1,13 @@
-import Fonts from './fonts';
-import Colors from './colors';
+import fonts, {Fonts} from './fonts';
+import useColors, {Colors} from './colors';
 
-export {Fonts, Colors};
+export interface Theme {
+  fonts: typeof Fonts;
+  colors: Colors;
+}
+
+export default (): Theme => {
+  const colors = useColors();
+
+  return {fonts, colors};
+};

@@ -1,17 +1,7 @@
-import {Appearance, ColorValue, OpaqueColorValue, StatusBarStyle} from 'react-native';
+import {types} from '@babel/core';
+import {useColorScheme} from 'react-native';
 
-export interface IColors {
-  white: string;
-  black: string;
-  blackAlpha: (alpha: number) => string;
-  primary: string;
-  secondary: string;
-  barStyle: StatusBarStyle;
-  primaryAlpha: (alpha: number) => string;
-  secondaryAlpha: (alpha: number) => string;
-}
-
-const light: IColors = {
+const light = {
   white: '#ffffff',
   black: '#000000',
   primary: '#ffffff',
@@ -22,7 +12,7 @@ const light: IColors = {
   primaryAlpha: (alpha: number) => `rgba(255,255,255,${alpha / 100})`,
 };
 
-const dark: IColors = {
+const dark = {
   white: '#ffffff',
   black: '#000000',
   primary: '#000000',
@@ -33,6 +23,14 @@ const dark: IColors = {
   secondaryAlpha: (alpha: number) => `rgba(255,255,255,${alpha / 100})`,
 };
 
-const Colors = Appearance.getColorScheme() === 'light' ? light : dark;
+type Light = typeof light;
 
-export default Colors;
+export interface Colors extends Light {
+  barStyle: 'light-content' | 'dark-content' | string;
+}
+
+export default () => {
+  const appearance = useColorScheme();
+
+  return appearance === 'light' ? light : dark;
+};

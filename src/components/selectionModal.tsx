@@ -1,11 +1,10 @@
 import React from 'react';
-import {View, Modal, StyleSheet, Text, StatusBar, ScrollView} from 'react-native';
+import {View, Modal, Text, StatusBar, ScrollView} from 'react-native';
 
 import {TouchableWithoutFeedback, TouchableOpacity} from 'react-native';
 import CheckBox from '@react-native-community/checkbox';
 
-import Colors from '../styles/themes/colors';
-import applyStyles from '../styles/components/selectionModal';
+import useStyles from '../styles/components/selectionModal';
 
 interface Item {
   title?: string | number;
@@ -36,7 +35,7 @@ const SelectionModal = (props: SelectionModalProps) => {
     height = 300,
     selected = {},
   } = props;
-  const styles = applyStyles();
+  const styles = useStyles();
 
   const containerSize = {
     width: width * (width > height ? 0.4 : 0.8),

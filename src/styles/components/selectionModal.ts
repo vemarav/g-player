@@ -1,7 +1,7 @@
 import {StyleSheet} from 'react-native';
-import {Colors, Fonts} from '../themes';
+import useTheme, {Theme} from '../themes';
 
-const getStyleSheet = ({}) => {
+const getStyleSheet = ({colors, fonts}: Theme) => {
   return StyleSheet.create({
     container: {
       ...StyleSheet.absoluteFillObject,
@@ -11,14 +11,14 @@ const getStyleSheet = ({}) => {
     title: {
       flex: 1,
       marginTop: 4,
-      color: Colors.white,
+      color: colors.white,
       marginHorizontal: 10,
-      fontSize: Fonts.size.s15,
-      fontFamily: Fonts.family.regular,
+      fontSize: fonts.size.s15,
+      fontFamily: fonts.family.regular,
     },
     listContainer: {
       borderRadius: 8,
-      backgroundColor: Colors.blackAlpha(90),
+      backgroundColor: colors.blackAlpha(90),
     },
     scrollContainer: {
       padding: 20,
@@ -33,21 +33,22 @@ const getStyleSheet = ({}) => {
     header: {
       marginTop: 20,
       marginHorizontal: 30,
-      color: Colors.white,
-      fontSize: Fonts.size.s22,
-      fontFamily: Fonts.family.semiBold,
+      color: colors.white,
+      fontSize: fonts.size.s22,
+      fontFamily: fonts.family.semiBold,
       letterSpacing: -0.5,
     },
   });
 };
 
 export default (props?: any) => {
-  const styles = getStyleSheet({...props});
+  const theme = useTheme();
+  const styles = getStyleSheet({...props, ...theme});
   return {
     ...styles,
     checkbox: {
-      true: Colors.white,
-      false: Colors.white,
+      true: theme.colors.white,
+      false: theme.colors.white,
     },
   };
 };

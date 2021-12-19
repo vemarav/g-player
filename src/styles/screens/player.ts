@@ -1,15 +1,15 @@
 import {StyleSheet} from 'react-native';
-import {Colors, Fonts} from '../themes';
+import useTheme, {Theme} from '../themes';
 
-const getStyleSheet = ({}) => {
+const getStyleSheet = ({colors, fonts}: Theme) => {
   return StyleSheet.create({
     background: {
-      backgroundColor: Colors.black,
+      backgroundColor: colors.black,
     },
     video: {
       zIndex: 0,
       transform: [{scale: 1}],
-      backgroundColor: Colors.black,
+      backgroundColor: colors.black,
     },
     sliderContainer: {
       bottom: 0,
@@ -19,7 +19,7 @@ const getStyleSheet = ({}) => {
       alignItems: 'center',
       position: 'absolute',
       paddingHorizontal: 10,
-      backgroundColor: Colors.blackAlpha(50),
+      backgroundColor: colors.blackAlpha(50),
     },
     slider: {
       flex: 1,
@@ -39,37 +39,36 @@ const getStyleSheet = ({}) => {
       alignItems: 'center',
       flexDirection: 'row',
       justifyContent: 'center',
-      backgroundColor: Colors.blackAlpha(50),
+      backgroundColor: colors.blackAlpha(50),
     },
     icon: {
       width: 48,
       height: 48,
-      color: Colors.white,
+      color: colors.white,
     },
     text: {
-      marginTop: 15,
       marginLeft: 5,
-      color: Colors.white,
-      letterSpacing: -2,
-      fontSize: Fonts.size.s48,
-      fontFamily: Fonts.family.regular,
+      color: colors.white,
+      letterSpacing: 2,
+      fontSize: fonts.size.s48,
+      fontWeight: '700',
     },
     displayText: {
       width: 200,
       marginLeft: 0,
       textShadowRadius: 5,
-      textShadowColor: Colors.blackAlpha(50),
+      textShadowColor: colors.blackAlpha(50),
       textShadowOffset: {width: 0, height: 0},
     },
     timeText: {
       width: 60,
-      color: Colors.white,
+      color: colors.white,
       textAlign: 'center',
-      fontSize: Fonts.size.s14,
-      fontFamily: Fonts.family.regular,
+      fontSize: fonts.size.s14,
+      fontFamily: fonts.family.regular,
     },
     textWidth: {
-      width: 60,
+      width: 65,
     },
     seekText: {
       marginLeft: 90,
@@ -89,12 +88,12 @@ const getStyleSheet = ({}) => {
       marginHorizontal: 10,
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: Colors.blackAlpha(50),
+      backgroundColor: colors.blackAlpha(50),
     },
     controlIconSize: {
       width: 30,
       height: 30,
-      color: Colors.white,
+      color: colors.white,
     },
     resetControlIcon: {
       padding: 0,
@@ -104,20 +103,21 @@ const getStyleSheet = ({}) => {
       width: 60,
       paddingTop: 5,
       textAlign: 'center',
-      fontSize: Fonts.size.s14,
+      fontSize: fonts.size.s14,
       textAlignVertical: 'center',
-      color: Colors.white,
-      fontFamily: Fonts.family.semiBold,
+      color: colors.white,
+      fontFamily: fonts.family.semiBold,
     },
   });
 };
 
 export default (props?: any) => {
-  const styles = getStyleSheet({...props});
+  const theme = useTheme();
+  const styles = getStyleSheet({...props, ...theme});
   return {
     ...styles,
-    thumbTintColor: Colors.white,
-    minimumTrackTintColor: Colors.white,
-    maximumTrackTintColor: Colors.white,
+    thumbTintColor: theme.colors.white,
+    minimumTrackTintColor: theme.colors.white,
+    maximumTrackTintColor: theme.colors.white,
   };
 };

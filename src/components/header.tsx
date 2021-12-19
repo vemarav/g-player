@@ -3,7 +3,7 @@ import {StatusBar, Text, TouchableOpacity, View} from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 
 import Icons from '../../assets/icons';
-import applyStyles from '../styles/components/header';
+import useStyles from '../styles/components/header';
 
 interface HeaderProps {
   isPop?: boolean;
@@ -13,7 +13,7 @@ interface HeaderProps {
 const Header = (props: HeaderProps) => {
   const navigation = useNavigation();
   const {title, isPop = false} = props;
-  const styles = applyStyles();
+  const styles = useStyles();
 
   return (
     <>
