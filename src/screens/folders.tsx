@@ -1,5 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import {View, AppStateStatus} from 'react-native';
+import {View} from 'react-native';
 import {Text, ScrollView, TouchableOpacity, RefreshControl, AppState} from 'react-native';
 import CameraRoll, {Album, GetAlbumsParams} from '@react-native-community/cameraroll';
 
@@ -23,7 +23,7 @@ const Folders = (props: ScreenProps<any>) => {
     };
   }, []);
 
-  const loadAlbums = async (s?: AppStateStatus) => {
+  const loadAlbums = async () => {
     setLoading(true);
     try {
       setAlbums(await CameraRoll.getAlbums(folderOptions));

@@ -9,8 +9,11 @@ import Subtitles from './Subtitles';
 import Audio from './Audio';
 import ScreenRotation from './ScreenRotation';
 
+const Logo = require('./Logo.png');
+
 export default {
   Back,
+  Logo,
   Play,
   Pause,
   Audio,

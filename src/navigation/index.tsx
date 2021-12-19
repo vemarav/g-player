@@ -6,6 +6,7 @@ import {
   NativeStackScreenProps,
 } from '@react-navigation/native-stack';
 
+import Splash from '../screens/splash';
 import Videos from '../screens/videos';
 import Player from '../screens/player';
 import Folder from '../screens/folders';
@@ -30,6 +31,7 @@ const Navigation = () => {
   return (
     <NavigationContainer linking={linking}>
       <Stack.Navigator screenOptions={stackOptions}>
+        <Stack.Screen name={Routes.Splash} component={Splash} />
         <Stack.Screen name={Routes.Folders} component={Folder} />
         <Stack.Screen name={Routes.Videos} component={Videos} />
         <Stack.Screen name={Routes.Player} component={Player} />
