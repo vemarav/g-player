@@ -8,6 +8,7 @@ import Animated, {call, useCode, useValue, withTiming} from 'react-native-reanim
 import {useSharedValue, useDerivedValue, useAnimatedStyle} from 'react-native-reanimated';
 import SystemSetting from 'react-native-system-setting';
 import Orientation from 'react-native-orientation-locker';
+import TextTicker from 'react-native-text-ticker';
 
 import Icons from '../../assets/icons';
 import ReText from '../components/retext';
@@ -420,7 +421,6 @@ const Player = (props: ScreenProps<any>) => {
               fullscreen={true}
               onError={onError}
               onEnd={onVideoEnd}
-              useTextureView={false}
               resizeMode={'contain'}
               progressUpdateInterval={500}
               selectedTextTrack={textTrack}
@@ -439,9 +439,13 @@ const Player = (props: ScreenProps<any>) => {
         <>
           <View style={styles.trackIcons}>
             <View>
-              <TouchableOpacity style={styles.titleContainer} onPress={goBack}>
+              <TouchableOpacity
+                style={[styles.titleContainer, {width: size.width * 0.6}]}
+                onPress={goBack}>
                 <Icons.Back {...styles.headerIcon} />
-                <Text style={styles.name}>{fileName}</Text>
+                <TextTicker style={styles.name} duration={100 * fileName.length}>
+                  {fileName}
+                </TextTicker>
               </TouchableOpacity>
             </View>
             <View style={styles.headerIcons}>

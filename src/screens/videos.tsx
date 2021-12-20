@@ -76,7 +76,9 @@ const Videos = (props: Props) => {
               <View style={styles.folder}>
                 <Image source={{uri: encoder(uri)}} style={styles.video} />
                 <View style={styles.textContainer}>
-                  <Text style={styles.title}>{uri.split(`${title}/`)[1]}</Text>
+                  <Text style={styles.title} numberOfLines={2}>
+                    {uri.split(`${title}/`)[1]}
+                  </Text>
                 </View>
               </View>
             </TouchableOpacity>

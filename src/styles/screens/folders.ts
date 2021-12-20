@@ -24,7 +24,7 @@ const getStyleSheet = ({colors, fonts}: Theme) => {
       flexDirection: 'row',
       alignItems: 'center',
       paddingHorizontal: 30,
-      paddingVertical: 10,
+      paddingVertical: 7,
     },
     textContainer: {
       paddingHorizontal: 15,

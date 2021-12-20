@@ -52,7 +52,9 @@ const Folders = (props: ScreenProps<any>) => {
             <View style={styles.folder}>
               <Icons.Folder {...styles.icon} />
               <View style={styles.textContainer}>
-                <Text style={styles.title}>{album.title}</Text>
+                <Text style={styles.title} numberOfLines={1}>
+                  {album.title}
+                </Text>
                 <Text style={styles.count}>
                   {album.count} {getVideoText(album.count)}
                 </Text>

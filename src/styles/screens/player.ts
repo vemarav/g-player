@@ -94,7 +94,6 @@ const getStyleSheet = ({colors, fonts, videoOrientation}: Styles) => {
       alignItems: 'center',
     },
     name: {
-      marginLeft: 10,
       color: colors.white,
       fontSize: fonts.size.s16,
       fontFamily: fonts.family.regular,
