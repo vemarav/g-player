@@ -1,8 +1,8 @@
 import React from 'react';
 import {View, Modal, Text, StatusBar, ScrollView} from 'react-native';
-
 import {TouchableWithoutFeedback, TouchableOpacity} from 'react-native';
 import CheckBox from '@react-native-community/checkbox';
+import langs from 'langs';
 
 import useStyles from '../styles/components/selectionModal';
 
@@ -43,6 +43,7 @@ const SelectionModal = (props: SelectionModalProps) => {
   };
 
   const Option = (item?: Item) => {
+    const language = langs.where('1', `${item?.language}`)?.name;
     return (
       <TouchableOpacity onPress={() => onSelect(item)} key={`${item?.title}`}>
         <View style={styles.item}>
@@ -52,7 +53,7 @@ const SelectionModal = (props: SelectionModalProps) => {
             tintColors={styles.checkbox}
           />
           <Text style={styles.title}>
-            {`${item?.language ?? item?.title ?? item?.index ?? 'NONE'}`.toString().toUpperCase()}
+            {`${language ?? item?.title ?? item?.index ?? 'NONE'}`.toString().toUpperCase()}
           </Text>
         </View>
       </TouchableOpacity>
