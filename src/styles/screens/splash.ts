@@ -1,6 +1,5 @@
 import {Dimensions, StyleSheet} from 'react-native';
 import useTheme, {Theme} from '../themes';
-import colors from '../themes/colors';
 
 const {width} = Dimensions.get('screen');
 

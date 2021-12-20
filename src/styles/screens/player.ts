@@ -1,7 +1,11 @@
-import {StyleSheet} from 'react-native';
+import {StatusBar, StyleSheet} from 'react-native';
 import useTheme, {Theme} from '../themes';
 
-const getStyleSheet = ({colors, fonts}: Theme) => {
+interface Styles extends Theme {
+  videoOrientation: any;
+}
+
+const getStyleSheet = ({colors, fonts, videoOrientation}: Styles) => {
   return StyleSheet.create({
     background: {
       backgroundColor: colors.black,
@@ -75,38 +79,39 @@ const getStyleSheet = ({colors, fonts}: Theme) => {
       backgroundColor: 'transparent',
     },
     trackIcons: {
-      padding: 20,
       width: '100%',
+      paddingBottom: 5,
+      paddingHorizontal: 20,
+      position: 'absolute',
+      justifyContent: 'space-between',
+      backgroundColor: colors.blackAlpha(50),
+      paddingTop: StatusBar.currentHeight ?? 0,
+      flexDirection: videoOrientation === 'L' ? 'row' : 'column',
+      alignItems: videoOrientation === 'L' ? 'center' : undefined,
+    },
+    titleContainer: {
       flexDirection: 'row',
       alignItems: 'center',
-      position: 'absolute',
-      justifyContent: 'flex-end',
     },
-    controlIcon: {
-      padding: 15,
-      borderRadius: 5,
-      marginHorizontal: 10,
+    name: {
+      marginLeft: 10,
+      color: colors.white,
+      fontSize: fonts.size.s16,
+      fontFamily: fonts.family.regular,
+    },
+    headerIcons: {
+      flexDirection: 'row',
       alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: colors.blackAlpha(50),
+      justifyContent: 'space-between',
     },
-    controlIconSize: {
-      width: 30,
-      height: 30,
+    headerIconContainer: {
+      paddingHorizontal: videoOrientation === 'L' ? 10 : 5,
+      paddingVertical: videoOrientation === 'L' ? 10 : 20,
+    },
+    headerIcon: {
+      width: 26,
+      height: 26,
       color: colors.white,
-    },
-    resetControlIcon: {
-      padding: 0,
-    },
-    controlText: {
-      height: 60,
-      width: 60,
-      paddingTop: 5,
-      textAlign: 'center',
-      fontSize: fonts.size.s14,
-      textAlignVertical: 'center',
-      color: colors.white,
-      fontFamily: fonts.family.semiBold,
     },
   });
 };

@@ -8,6 +8,7 @@ import Folder from './Folder';
 import Subtitles from './Subtitles';
 import Audio from './Audio';
 import ScreenRotation from './ScreenRotation';
+import Speed from './Speed';
 
 const WhiteLogo = require('./WhiteLogo.png');
 const BlackLogo = require('./BlackLogo.png');
@@ -17,6 +18,7 @@ export default {
   Back,
   Logo,
   Play,
+  Speed,
   Pause,
   Audio,
   Folder,

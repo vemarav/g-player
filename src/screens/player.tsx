@@ -58,8 +58,8 @@ const Player = (props: ScreenProps<any>) => {
   const fileUri = props.route.params?.uri;
   const contentUri = `content://${props.route.path}`;
   const videoUri = encoder(fileUri ?? contentUri);
+  const fileName = (fileUri ?? contentUri).split('/').pop();
   let modalProps: SelectionModalProps = {isVisible: false};
-  const styles = useStyles();
 
   const videoRef: React.Ref<Video> = useRef(null);
 
@@ -97,6 +97,7 @@ const Player = (props: ScreenProps<any>) => {
   const [watchTimeText, setWatchTimeText] = useState(getTime(0));
   const [dimensions, setDimensions] = useState(Dimensions.get('screen'));
   const [videoOrientation, setVideoOrientation] = useState(VideoOrientation.LANDSCAPE);
+  const styles = useStyles({videoOrientation});
 
   // tracks
   const [selectedTextTrack, setSelectedTextTrack] = useState<any>();
@@ -177,6 +178,14 @@ const Player = (props: ScreenProps<any>) => {
 
   const seekTo = (seconds: number, precision?: number) => {
     videoRef.current?.seek(seconds, precision ?? 50);
+  };
+
+  const goBack = () => {
+    if (props.navigation.canGoBack()) {
+      props.navigation.goBack();
+    } else {
+      BackHandler.exitApp();
+    }
   };
 
   const tap = Gesture.Tap()
@@ -281,7 +290,6 @@ const Player = (props: ScreenProps<any>) => {
 
   const onError = () => {
     if (uri !== encoder(uri)) return setUri(encoder(uri));
-    const goBack = () => props.navigation.goBack();
     Alert.alert(
       '',
       'Cannot play this video.',
@@ -295,13 +303,7 @@ const Player = (props: ScreenProps<any>) => {
     );
   };
 
-  const onVideoEnd = () => {
-    if (props.navigation.canGoBack()) {
-      props.navigation.goBack();
-    } else {
-      BackHandler.exitApp();
-    }
-  };
+  const onVideoEnd = () => goBack();
 
   const gestures = Gesture.Exclusive(pan, pinch, doubleTap, tap);
   const size = {width: dimensions.width, height: dimensions.height};
@@ -393,7 +395,7 @@ const Player = (props: ScreenProps<any>) => {
         );
       case isPaused && isControls:
         return (
-          <View style={styles.iconContainer}>
+          <View>
             <Icons.Pause {...styles.icon} />
           </View>
         );
@@ -415,11 +417,11 @@ const Player = (props: ScreenProps<any>) => {
               source={{uri}}
               ref={videoRef}
               onLoad={setInfo}
+              fullscreen={true}
               onError={onError}
               onEnd={onVideoEnd}
               useTextureView={false}
               resizeMode={'contain'}
-              fullscreen={!isControls}
               progressUpdateInterval={500}
               selectedTextTrack={textTrack}
               selectedAudioTrack={audioTrack}
@@ -435,27 +437,33 @@ const Player = (props: ScreenProps<any>) => {
 
       {isControls && !isLoading ? (
         <>
-          <View style={[styles.trackIcons]}>
-            <TouchableOpacity
-              style={[styles.controlIcon, styles.resetControlIcon]}
-              onPress={() => setModalType(ModalType.PLAYBACK_SPEED)}>
-              <Text style={[styles.controlIconSize, styles.controlText]}>
-                {selectedPlaybackSpeed.title}X
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.controlIcon}
-              onPress={() => setModalType(ModalType.SUBTITLE)}>
-              <Icons.Subtitles {...styles.controlIconSize} />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.controlIcon}
-              onPress={() => setModalType(ModalType.AUDIO)}>
-              <Icons.Audio {...styles.controlIconSize} />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.controlIcon} onPress={toggleOrientation}>
-              <Icons.ScreenRotation {...styles.controlIconSize} />
-            </TouchableOpacity>
+          <View style={styles.trackIcons}>
+            <View>
+              <TouchableOpacity style={styles.titleContainer} onPress={goBack}>
+                <Icons.Back {...styles.headerIcon} />
+                <Text style={styles.name}>{fileName}</Text>
+              </TouchableOpacity>
+            </View>
+            <View style={styles.headerIcons}>
+              <TouchableOpacity
+                style={styles.headerIconContainer}
+                onPress={() => setModalType(ModalType.PLAYBACK_SPEED)}>
+                <Icons.Speed {...styles.headerIcon} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.headerIconContainer}
+                onPress={() => setModalType(ModalType.SUBTITLE)}>
+                <Icons.Subtitles {...styles.headerIcon} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.headerIconContainer}
+                onPress={() => setModalType(ModalType.AUDIO)}>
+                <Icons.Audio {...styles.headerIcon} />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.headerIconContainer} onPress={toggleOrientation}>
+                <Icons.ScreenRotation {...styles.headerIcon} />
+              </TouchableOpacity>
+            </View>
           </View>
 
           <View style={[styles.sliderContainer, bottom]}>
