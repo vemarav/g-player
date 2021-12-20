@@ -1,35 +1,59 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-  package="com.gargantua.player">
+    xmlns:tools="http://schemas.android.com/tools"
+    package="com.gargantua.player">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
-    <uses-permission android:name="android.permission.WRITE_SETTINGS" />
+    <uses-permission android:name="android.permission.WRITE_SETTINGS"
+        tools:ignore="ProtectedPermissions" />
 
     <application
       android:name=".MainApplication"
       android:label="@string/app_name"
-      android:icon="@mipmap/ic_launcher"
-      android:roundIcon="@mipmap/ic_launcher_round"
+      android:icon="@mipmap/dark"
       android:allowBackup="false"
       android:theme="@style/AppTheme"
       android:launchMode="singleTask"
       android:requestLegacyExternalStorage="true">
-      <activity
-        android:name=".MainActivity"
-        android:label="@string/app_name"
-        android:configChanges="keyboard|keyboardHidden|orientation|screenSize|uiMode"
-        android:launchMode="singleTask"
-        android:windowSoftInputMode="adjustResize">
-        <intent-filter>
-            <action android:name="android.intent.action.MAIN" />
-                        <category android:name="android.intent.category.LAUNCHER" />
-        </intent-filter>
-        <intent-filter>
-            <action android:name="android.intent.action.VIEW" />
-            <category android:name="android.intent.category.DEFAULT" />
-            <data android:mimeType="video/*" />
-        </intent-filter>
-      </activity>
+      <activity android:name=".MainActivity" />
+        <activity-alias
+          android:enabled="false"
+          android:name=".MainActivitylight"
+          android:targetActivity=".MainActivity"
+          android:icon="@mipmap/light" 
+          android:label="@string/app_name"
+          android:configChanges="keyboard|keyboardHidden|orientation|screenSize|uiMode"
+          android:launchMode="singleTask"
+          android:windowSoftInputMode="adjustResize">
+          <intent-filter>
+              <action android:name="android.intent.action.MAIN" />
+              <category android:name="android.intent.category.LAUNCHER" />
+          </intent-filter>
+          <intent-filter tools:ignore="AppLinkUrlError">
+              <action android:name="android.intent.action.VIEW" />
+              <category android:name="android.intent.category.DEFAULT" />
+              <data android:mimeType="video/*" />
+          </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:enabled="true"
+            android:name=".MainActivitydark"
+            android:targetActivity=".MainActivity"
+            android:icon="@mipmap/dark"
+            android:label="@string/app_name"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenSize|uiMode"
+            android:launchMode="singleTask"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <intent-filter tools:ignore="AppLinkUrlError">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="video/*" />
+            </intent-filter>
+        </activity-alias>
     </application>
 </manifest>

@@ -9,7 +9,9 @@ import Subtitles from './Subtitles';
 import Audio from './Audio';
 import ScreenRotation from './ScreenRotation';
 
-const Logo = require('./Logo.png');
+const WhiteLogo = require('./WhiteLogo.png');
+const BlackLogo = require('./BlackLogo.png');
+const Logo: {[key: string]: any} = {light: WhiteLogo, dark: BlackLogo};
 
 export default {
   Back,

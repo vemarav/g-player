@@ -1,5 +1,6 @@
 import {Dimensions, StyleSheet} from 'react-native';
 import useTheme, {Theme} from '../themes';
+import colors from '../themes/colors';
 
 const {width} = Dimensions.get('screen');
 
@@ -10,7 +11,7 @@ const getStyleSheet = ({colors, fonts}: Theme) => {
       flex: 1,
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: colors.black,
+      backgroundColor: colors.primary,
     },
     logo: {
       width: logoSize,
@@ -24,7 +25,7 @@ const getStyleSheet = ({colors, fonts}: Theme) => {
     text: {
       width: '100%',
       textAlign: 'center',
-      color: colors.white,
+      color: colors.secondary,
     },
     from: {
       fontSize: fonts.size.s18,
@@ -42,5 +43,10 @@ export default (props?: any) => {
   const theme = useTheme();
   const styles = getStyleSheet({...props, ...theme});
 
-  return styles;
+  return {
+    ...styles,
+    barColor: theme.colors.primary,
+    barStyle: theme.colors.barStyle,
+    theme: theme.colors.scheme,
+  };
 };

@@ -1,5 +1,5 @@
 import React, {useEffect} from 'react';
-import {View, Text} from 'react-native';
+import {View, Text, StatusBar} from 'react-native';
 import FastImage from 'react-native-fast-image';
 import Animated, {withTiming, useSharedValue, useAnimatedStyle} from 'react-native-reanimated';
 
@@ -26,8 +26,9 @@ const Splash = (props: ScreenProps<any>) => {
 
   return (
     <View style={styles.container}>
+      <StatusBar backgroundColor={styles.barColor} barStyle={styles.barStyle} />
       <Animated.View style={[styles.container, animatedStyle]}>
-        <FastImage source={Icons.Logo} style={styles.logo} />
+        <FastImage source={Icons.Logo[styles.theme]} style={styles.logo} />
       </Animated.View>
       <View style={styles.textContainer}>
         <Text style={[styles.from, styles.text]}>from</Text>
