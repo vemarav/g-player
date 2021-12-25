@@ -1,8 +1,10 @@
 import {useColorScheme} from 'react-native';
+import {useAppSelector} from '../../store/hooks';
 
 const light = {
   scheme: 'light',
   white: '#ffffff',
+  blue: '#1863d3',
   black: '#000000',
   primary: '#ffffff',
   secondary: '#000000',
@@ -15,6 +17,7 @@ const light = {
 const dark = {
   scheme: 'dark',
   white: '#ffffff',
+  blue: '#388cff',
   black: '#000000',
   primary: '#000000',
   secondary: '#ffffff',
@@ -34,5 +37,7 @@ export interface Colors extends Light, Dark {
 
 export default (): Colors => {
   const appearance = useColorScheme();
-  return appearance === 'light' ? light : dark;
+  const themeMode = useAppSelector(state => state.theme.mode ?? appearance);
+
+  return themeMode === 'light' ? light : dark;
 };

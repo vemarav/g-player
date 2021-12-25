@@ -135,7 +135,7 @@ android {
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 7
-        versionName "1.0.0-alpha-7"
+        versionName "1.0.0-alpha-8"
     }
     splits {
         abi {

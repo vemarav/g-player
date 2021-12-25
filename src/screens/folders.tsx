@@ -39,29 +39,39 @@ const Folders = (props: ScreenProps<any>) => {
 
   const getVideoText = (n: number) => (n > 1 ? 'Videos' : 'Video');
 
+  const settingsIcon = (
+    <TouchableOpacity onPress={() => navigateTo(Routes.Settings)}>
+      <Icons.Settings {...styles.settingsIcon} />
+    </TouchableOpacity>
+  );
+
   return (
     <View style={styles.container}>
-      <Header title="Folders" />
+      <Header title="Folders" icon={settingsIcon} />
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollViewContainer}
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={isLoading} onRefresh={loadAlbums} />}>
-        {albums.map((album: Album) => (
-          <TouchableOpacity onPress={() => navigateTo(Routes.Videos, album)} key={album.title}>
-            <View style={styles.folder}>
-              <Icons.Folder {...styles.icon} />
-              <View style={styles.textContainer}>
-                <Text style={styles.title} numberOfLines={1}>
-                  {album.title}
-                </Text>
-                <Text style={styles.count}>
-                  {album.count} {getVideoText(album.count)}
-                </Text>
+        {albums.length > 0 ? (
+          albums.map((album: Album) => (
+            <TouchableOpacity onPress={() => navigateTo(Routes.Videos, album)} key={album.title}>
+              <View style={styles.folder}>
+                <Icons.Folder {...styles.icon} />
+                <View style={styles.textContainer}>
+                  <Text style={styles.title} numberOfLines={1}>
+                    {album.title}
+                  </Text>
+                  <Text style={styles.count}>
+                    {album.count} {getVideoText(album.count)}
+                  </Text>
+                </View>
               </View>
-            </View>
-          </TouchableOpacity>
-        ))}
+            </TouchableOpacity>
+          ))
+        ) : (
+          <Text style={styles.empty}>No videos found</Text>
+        )}
       </ScrollView>
     </View>
   );

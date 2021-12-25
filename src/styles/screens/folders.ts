@@ -43,6 +43,18 @@ const getStyleSheet = ({colors, fonts}: Theme) => {
       fontFamily: fonts.family.regular,
       color: colors.secondaryAlpha(30),
     },
+    empty: {
+      marginTop: 30,
+      textAlign: 'center',
+      fontSize: fonts.size.s16,
+      fontFamily: fonts.family.regular,
+      color: colors.secondaryAlpha(70),
+    },
+    settingsIcon: {
+      height: 24,
+      width: 24,
+      color: colors.secondaryAlpha(80),
+    },
   });
 };
 

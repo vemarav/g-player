@@ -8,11 +8,12 @@ import useStyles from '../styles/components/header';
 interface HeaderProps {
   isPop?: boolean;
   title: string;
+  icon?: React.ReactNode | JSX.Element;
 }
 
 const Header = (props: HeaderProps) => {
   const navigation = useNavigation();
-  const {title, isPop = false} = props;
+  const {title, isPop = false, icon} = props;
   const styles = useStyles();
 
   return (
@@ -31,6 +32,7 @@ const Header = (props: HeaderProps) => {
           onPress={isPop ? navigation.goBack : undefined}>
           {title}
         </Text>
+        {icon}
       </View>
     </>
   );

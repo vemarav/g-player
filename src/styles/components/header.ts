@@ -12,9 +12,10 @@ const getStyleSheet = ({colors, fonts}: Theme) => {
       borderColor: colors.secondaryAlpha(80),
     },
     header: {
+      flex: 1,
       marginTop: 3,
       marginHorizontal: 10,
-      fontSize: fonts.size.s22,
+      fontSize: fonts.size.s20,
       color: colors.secondaryAlpha(80),
       fontFamily: fonts.family.regular,
     },

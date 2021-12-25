@@ -9,6 +9,7 @@ import Subtitles from './Subtitles';
 import Audio from './Audio';
 import ScreenRotation from './ScreenRotation';
 import Speed from './Speed';
+import Settings from './Settings';
 
 const WhiteLogo = require('./WhiteLogo.png');
 const BlackLogo = require('./BlackLogo.png');
@@ -23,6 +24,7 @@ export default {
   Audio,
   Folder,
   VolumeUp,
+  Settings,
   Subtitles,
   Brightness,
   Information,
