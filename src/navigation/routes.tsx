@@ -5,6 +5,8 @@ const Routes = {
   Player: 'Player',
   Settings: 'Settings',
   About: 'About',
+  Terms: 'Terms',
+  Privacy: 'Privacy',
 };
 
 export default Routes;

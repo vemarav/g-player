@@ -14,6 +14,8 @@ import Settings from '../screens/settings';
 import Routes from '../navigation/routes';
 import linking from '../navigation/linking';
 import About from '../screens/about';
+import Terms from '../screens/terms';
+import Privacy from '../screens/privacy';
 
 import {hasPermissionAndroid} from '../common/utils';
 
@@ -35,11 +37,13 @@ const Navigation = () => {
     <NavigationContainer linking={linking}>
       <Stack.Navigator screenOptions={stackOptions}>
         <Stack.Screen name={Routes.Splash} component={Splash} />
+        <Stack.Screen name={Routes.Player} component={Player} />
         <Stack.Screen name={Routes.Folders} component={Folder} />
         <Stack.Screen name={Routes.Settings} component={Settings} />
         <Stack.Screen name={Routes.About} component={About} />
         <Stack.Screen name={Routes.Videos} component={Videos} />
-        <Stack.Screen name={Routes.Player} component={Player} />
+        <Stack.Screen name={Routes.Terms} component={Terms} />
+        <Stack.Screen name={Routes.Privacy} component={Privacy} />
       </Stack.Navigator>
     </NavigationContainer>
   );

@@ -1,6 +1,6 @@
 {
   "name": "player",
-  "version": "0.0.1",
+  "version": "1.0.0-alpha-9",
   "private": true,
   "rnpm": {
     "assets": [
@@ -13,6 +13,7 @@
     "start": "react-native start",
     "test": "jest",
     "lint": "eslint .",
+    "install": "adb install android/app/build/outputs/apk/debug/app-debug.apk",
     "deploy": "cd android; ./gradlew clean; cd ..; react-native run-android --variant=release"
   },
   "dependencies": {

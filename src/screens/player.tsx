@@ -1,11 +1,16 @@
-import React, {useState, useEffect, useRef} from 'react';
+import React, {useState, useEffect, useRef, useCallback} from 'react';
 import {View, StatusBar, ActivityIndicator, Alert, BackHandler} from 'react-native';
 import {TouchableOpacity, Dimensions, Text} from 'react-native';
 import Video from 'react-native-video';
 import {GestureHandlerRootView, GestureDetector, Gesture} from 'react-native-gesture-handler';
 import Slider from '@react-native-community/slider';
-import Animated, {call, useCode, useValue, withTiming} from 'react-native-reanimated';
-import {useSharedValue, useDerivedValue, useAnimatedStyle} from 'react-native-reanimated';
+import Animated, {call, runOnJS, useCode, useValue, withTiming} from 'react-native-reanimated';
+import {
+  useSharedValue,
+  useDerivedValue,
+  useAnimatedStyle,
+  useAnimatedProps,
+} from 'react-native-reanimated';
 import SystemSetting from 'react-native-system-setting';
 import Orientation from 'react-native-orientation-locker';
 import TextTicker from 'react-native-text-ticker';
@@ -17,6 +22,9 @@ import {PLAYBACK_SPEEDS} from '../common/constants';
 import {encoder, getTime, getTimeInSeconds} from '../common/utils';
 import SelectionModal, {SelectionModalProps} from '../components/selectionModal';
 import {ScreenProps} from '../navigation';
+import {useAppDispatch, useAppSelector} from '../store/hooks';
+import {initialFileState, update} from '../store/slices/resume';
+import {setLoop} from '../store/slices/settings';
 
 interface Info {
   [key: string]: any;
@@ -53,7 +61,7 @@ const AnimatedSlider = Animated.createAnimatedComponent(Slider);
 const WINDOW = Dimensions.get('window');
 
 const MAX_ZOOM = 6;
-const MIN_ZOOM = 0.3;
+const MIN_ZOOM = 0.1;
 
 const Player = (props: ScreenProps<any>) => {
   const fileUri = props.route.params?.uri;
@@ -64,29 +72,36 @@ const Player = (props: ScreenProps<any>) => {
 
   const videoRef: React.Ref<Video> = useRef(null);
 
+  const resume = useAppSelector(state => state.resume[videoUri]);
+  const isResume = useAppSelector(state => state.settings.playback === 'resume');
+  const loop = useAppSelector(state => state.settings.loop);
+
+  const dispatch = useAppDispatch();
+  const resumeData = Object.assign(initialFileState, resume);
+
   // previous values, stores where user left the gesture
-  const pScale = useSharedValue(1);
-  const pVolume = useSharedValue(0);
-  const pBrightness = useSharedValue(0);
+  const pScale = useSharedValue(resumeData.scale);
+  const pVolume = useSharedValue(resumeData.volume);
+  const pBrightness = useSharedValue(resumeData.brightness);
   const pTranslate = useSharedValue({x: 0, y: 0}); // used in pan tracking
   const pTransition = useSharedValue({x: 0, y: 0});
   const pFocals = useSharedValue({x: 0, y: 0, updated: false});
 
   // active values used in animations
-  const scale = useSharedValue(1);
-  const volume = useSharedValue(0);
+  const scale = useSharedValue(pScale.value);
+  const volume = useSharedValue(pVolume.value);
   const watchTime = useSharedValue(0);
   const totalTime = useSharedValue(0);
-  const brightness = useSharedValue(0);
-  const translateX = useSharedValue(0);
-  const translateY = useSharedValue(0);
+  const brightness = useSharedValue(pBrightness.value);
+  const translateX = useSharedValue(pTransition.value.x);
+  const translateY = useSharedValue(pTransition.value.y);
   const progress: Animated.Value<number> = useValue(0);
   const zoomText = useDerivedValue(() => `${Math.round(scale.value * 100)}%`);
   const volumeText = useDerivedValue(() => `${Math.round(volume.value * 50)}`);
   const brightnessText = useDerivedValue(() => `${Math.round(brightness.value * 50)}`);
 
-  const [zoom, setZoom] = useState(1);
   const [swipe, setSwipe] = useState<Swipe>();
+  const [zoom, setZoom] = useState(scale.value);
   const [isZoom, setIsZoom] = useState(false);
   const [isPaused, setPaused] = useState(false);
   const [isVolume, setIsVolume] = useState(false);
@@ -116,6 +131,30 @@ const Player = (props: ScreenProps<any>) => {
     ],
   }));
 
+  const purgeResume = useCallback(() => {
+    dispatch(
+      update({
+        scale: scale.value,
+        filename: videoUri,
+        volume: volume.value,
+        brightness: brightness.value,
+        playedDuration: totalTime.value - watchTime.value < 3 ? 0 : watchTime.value,
+      }),
+    );
+  }, []);
+
+  useAnimatedProps(() => {
+    'worklet';
+    runOnJS(SystemSetting.setVolume)(volume.value);
+    return volume;
+  }, [volume]);
+
+  useAnimatedProps(() => {
+    'worklet';
+    runOnJS(SystemSetting.setAppBrightness)(brightness.value);
+    return brightness;
+  }, [brightness]);
+
   useCode(() => {
     return call([progress], (progress: any) => {
       watchTime.value = progress * totalTime.value;
@@ -125,16 +164,12 @@ const Player = (props: ScreenProps<any>) => {
 
   useEffect(() => {
     setLoading(true);
-    const dimensionSub = Dimensions.addEventListener('change', ({screen}) => {
-      setDimensions(screen);
-    });
-
-    (async () => {
-      volume.value = await SystemSetting.getVolume('music');
-      brightness.value = await SystemSetting.getAppBrightness();
-    })();
+    const dimensionSub = Dimensions.addEventListener('change', ({screen}) => setDimensions(screen));
+    if (isResume) seekTo(resumeData.playedDuration);
 
     return () => {
+      SystemSetting.getBrightness().then(SystemSetting.setAppBrightness);
+      purgeResume();
       dimensionSub?.remove();
       Orientation.lockToPortrait();
       Orientation.getAutoRotateState(state => {
@@ -155,11 +190,6 @@ const Player = (props: ScreenProps<any>) => {
   }, [videoOrientation]);
 
   useEffect(() => {
-    if (modalType !== ModalType.NONE) {
-    }
-  }, [modalType]);
-
-  useEffect(() => {
     if (!isPaused) {
       translateX.value = withTiming(0, {duration: 250});
       translateY.value = withTiming(0, {duration: 250});
@@ -168,6 +198,8 @@ const Player = (props: ScreenProps<any>) => {
       setZoom(scale.value);
     }
   }, [isPaused]);
+
+  useEffect(() => purgeResume(), [watchTime.value]);
 
   const toggleOrientation = () => {
     setVideoOrientation(
@@ -223,11 +255,9 @@ const Player = (props: ScreenProps<any>) => {
           if (isVolume) {
             const _volume = pVolume.value + change;
             volume.value = _volume > 1 ? 1 : _volume < 0 ? 0 : _volume;
-            SystemSetting.setVolume(volume.value);
           } else if (isBrightness) {
             const _brightness = pBrightness.value + change;
             brightness.value = _brightness > 1 ? 1 : _brightness < 0 ? 0 : _brightness;
-            SystemSetting.setAppBrightness(brightness.value);
           }
           break;
         }
@@ -271,7 +301,7 @@ const Player = (props: ScreenProps<any>) => {
       if (!isZoom) setIsZoom(true);
       const _scale = pScale.value + event.scale - 1;
       if (_scale > MAX_ZOOM) scale.value = 6;
-      else if (_scale < MIN_ZOOM) scale.value = 0.5;
+      else if (_scale < MIN_ZOOM) scale.value = 0.1;
       else scale.value = _scale;
     })
     .onEnd(() => setIsZoom(false));
@@ -415,12 +445,13 @@ const Player = (props: ScreenProps<any>) => {
               <Status />
             </View>
             <AnimatedVideo
+              repeat={loop}
               source={{uri}}
               ref={videoRef}
               onLoad={setInfo}
               fullscreen={true}
               onError={onError}
-              onEnd={onVideoEnd}
+              onEnd={loop ? undefined : onVideoEnd}
               resizeMode={'contain'}
               progressUpdateInterval={500}
               selectedTextTrack={textTrack}
@@ -440,7 +471,7 @@ const Player = (props: ScreenProps<any>) => {
           <View style={styles.trackIcons}>
             <View>
               <TouchableOpacity
-                style={[styles.titleContainer, {width: size.width * 0.6}]}
+                style={[styles.titleContainer, {width: size.width * 0.5}]}
                 onPress={goBack}>
                 <Icons.Back {...styles.headerIcon} />
                 <TextTicker style={styles.name} duration={100 * fileName.length}>
@@ -449,6 +480,14 @@ const Player = (props: ScreenProps<any>) => {
               </TouchableOpacity>
             </View>
             <View style={styles.headerIcons}>
+              <TouchableOpacity
+                style={styles.headerIconContainer}
+                onPress={() => dispatch(setLoop(!loop))}>
+                <Icons.Loop
+                  {...styles.headerIcon}
+                  color={loop ? styles.selectedIcon.color : styles.headerIcon.color}
+                />
+              </TouchableOpacity>
               <TouchableOpacity
                 style={styles.headerIconContainer}
                 onPress={() => setModalType(ModalType.PLAYBACK_SPEED)}>

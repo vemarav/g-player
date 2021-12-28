@@ -37,7 +37,7 @@ export interface Colors extends Light, Dark {
 
 export default (): Colors => {
   const appearance = useColorScheme();
-  const themeMode = useAppSelector(state => state.theme.mode ?? appearance);
+  const themeMode = useAppSelector(state => state.settings.theme ?? appearance);
 
   return themeMode === 'light' ? light : dark;
 };

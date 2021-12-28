@@ -4,12 +4,13 @@ import {Text, View, TouchableOpacity} from 'react-native';
 import Header from '../components/header';
 import {Routes, ScreenProps} from '../navigation';
 import {useAppDispatch, useAppSelector} from '../store/hooks';
-import {darkTheme, lightTheme, systemTheme} from '../store/slices/theme';
+import {setTheme, setPlayBack} from '../store/slices/settings';
 import useStyles from '../styles/screens/settings';
 
 const Settings = (props: ScreenProps<any>) => {
   const styles = useStyles();
-  const mode = useAppSelector(state => state.theme.mode);
+  const theme = useAppSelector(state => state.settings.theme);
+  const playback = useAppSelector(state => state.settings.playback);
   const dispatch = useAppDispatch();
 
   const navigateTo = (screen: string, params = {}) => {
@@ -18,31 +19,49 @@ const Settings = (props: ScreenProps<any>) => {
 
   const checked = (isSelected: boolean) => (isSelected ? '✓' : '   ');
 
-  const isLight = mode === 'light';
-  const isDark = mode === 'dark';
-  const isNull = mode === null;
+  const isLight = theme === 'light';
+  const isDark = theme === 'dark';
+  const isNull = !theme;
+
+  const isStart = playback === 'start';
+  const isResume = playback === 'resume';
 
   return (
     <View style={styles.container}>
       <Header title="Settings" isPop />
       <View style={styles.listContainer}>
         <View style={styles.itemContainer}>
+          <Text style={styles.title}>Playback</Text>
+          <View style={styles.listContainer}>
+            <Text
+              style={[styles.subtitle, isStart ? styles.selectedTheme : {}]}
+              onPress={() => dispatch(setPlayBack('start'))}>
+              {`${checked(isStart)} Start video from beginning`}
+            </Text>
+            <Text
+              style={[styles.subtitle, isResume ? styles.selectedTheme : {}]}
+              onPress={() => dispatch(setPlayBack('resume'))}>
+              {`${checked(isResume)} Resume`}
+            </Text>
+          </View>
+        </View>
+        <View style={styles.itemContainer}>
           <Text style={styles.title}>Theme</Text>
           <View style={styles.listContainer}>
             <Text
+              style={[styles.subtitle, isNull ? styles.selectedTheme : {}]}
+              onPress={() => dispatch(setTheme())}>
+              {`${checked(isNull)} System Default`}
+            </Text>
+            <Text
               style={[styles.subtitle, isLight ? styles.selectedTheme : {}]}
-              onPress={() => dispatch(lightTheme())}>
+              onPress={() => dispatch(setTheme('light'))}>
               {`${checked(isLight)} Light`}
             </Text>
             <Text
               style={[styles.subtitle, isDark ? styles.selectedTheme : {}]}
-              onPress={() => dispatch(darkTheme())}>
+              onPress={() => dispatch(setTheme('dark'))}>
               {`${checked(isDark)} Dark`}
-            </Text>
-            <Text
-              style={[styles.subtitle, isNull ? styles.selectedTheme : {}]}
-              onPress={() => dispatch(systemTheme())}>
-              {`${checked(isNull)} System Default`}
             </Text>
           </View>
         </View>

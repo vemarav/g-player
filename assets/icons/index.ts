@@ -10,6 +10,7 @@ import Audio from './Audio';
 import ScreenRotation from './ScreenRotation';
 import Speed from './Speed';
 import Settings from './Settings';
+import Loop from './Loop';
 
 const WhiteLogo = require('./WhiteLogo.png');
 const BlackLogo = require('./BlackLogo.png');
@@ -18,6 +19,7 @@ const Logo: {[key: string]: any} = {light: WhiteLogo, dark: BlackLogo};
 export default {
   Back,
   Logo,
+  Loop,
   Play,
   Speed,
   Pause,

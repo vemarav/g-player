@@ -112,6 +112,9 @@ const getStyleSheet = ({colors, fonts, videoOrientation}: Styles) => {
       height: 26,
       color: colors.white,
     },
+    selectedIcon: {
+      color: colors.blue,
+    },
   });
 };
 

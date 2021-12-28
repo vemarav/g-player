@@ -1,9 +1,11 @@
 import {combineReducers} from '@reduxjs/toolkit';
 
-import theme from './slices/theme';
+import resume from './slices/resume';
+import settings from './slices/settings';
 
 const rootReducer = combineReducers({
-  theme,
+  resume,
+  settings,
 });
 
 export default rootReducer;
