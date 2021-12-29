@@ -58,3 +58,7 @@ buck-out/
 
 # CocoaPods
 /ios/Pods/
+
+# android
+android/app/keystores
+android/app/keystore.properties

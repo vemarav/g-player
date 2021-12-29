@@ -1,6 +1,6 @@
 {
   "name": "player",
-  "version": "1.0.0-alpha-9",
+  "version": "1.0.0",
   "private": true,
   "rnpm": {
     "assets": [
@@ -14,7 +14,9 @@
     "test": "jest",
     "lint": "eslint .",
     "debug": "adb install android/app/build/outputs/apk/debug/app-debug.apk",
-    "deploy": "cd android; ./gradlew clean; cd ..; react-native run-android --variant=release"
+    "release": "adb install android/app/build/outputs/apk/release/app-release.apk",
+    "deploy": "cd android; ./gradlew clean; cd ..; react-native run-android --variant=release",
+    "bundle": "cd android; ./gradlew bundleRelease; cd ..;"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "^1.15.14",

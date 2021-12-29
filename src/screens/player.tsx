@@ -451,13 +451,14 @@ const Player = (props: ScreenProps<any>) => {
               onLoad={setInfo}
               fullscreen={true}
               onError={onError}
-              onEnd={loop ? undefined : onVideoEnd}
+              useTextureView={true}
               resizeMode={'contain'}
               progressUpdateInterval={500}
               selectedTextTrack={textTrack}
               selectedAudioTrack={audioTrack}
               onProgress={updateSliderProgress}
               rate={selectedPlaybackSpeed.title}
+              onEnd={loop ? undefined : onVideoEnd}
               style={[styles.video, size, videoStyles]}
               onReadyForDisplay={() => setLoading(false)}
               paused={swipe === Swipe.HORIZONTAL || isPaused}
